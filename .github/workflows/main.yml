@@ -20,57 +20,57 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: armv7-unknown-linux-gnueabihf
-        override: true
+        with:
+          toolchain: stable
+          target: armv7-unknown-linux-gnueabihf
+          override: true
       - uses: actions-rs/cargo@v1
-      with:
-        use-cross: true
-        command: build
-        args: --target armv7-unknown-linux-gnueabihf
+        with:
+          use-cross: true
+          command: build
+          args: --target armv7-unknown-linux-gnueabihf
   build_linux_x86:
     name: Linux x86_64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: x86_64-unknown-linux-gnu
-        override: true
-          - uses: actions-rs/cargo@v1
-      with:
-        use-cross: true
-        command: build
-        args: --target x86_64-unknown-linux-gnu
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-unknown-linux-gnu
   build_macos:
     name: macOS
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: x86_64-apple-darwin
-        override: true
-          - uses: actions-rs/cargo@v1
-      with:
-        use-cross: true
-        command: build
-        args: --target x86_64-apple-darwin
+        with:
+          toolchain: stable
+          target: x86_64-apple-darwin
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-apple-darwin
   build_windows_x86:
     name: Windows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: x86_64-pc-windows-gnu
-        override: true
-        - uses: actions-rs/cargo@v1
-      with:
-        use-cross: true
-        command: build
-        args: --target x86_64-pc-windows-gnu
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-gnu
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-pc-windows-gnu
