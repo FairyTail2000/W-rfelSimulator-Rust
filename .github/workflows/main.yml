@@ -33,6 +33,7 @@ jobs:
         with:
           name: würfeln-armv7-unknown-linux-gnueabihf
           path: target/release/würfeln
+      - run: "ls"
   build_linux_x86:
     name: Linux x86_64
     runs-on: ubuntu-latest
@@ -52,6 +53,7 @@ jobs:
         with:
           name: würfeln-x86_64-unknown-linux-gnu
           path: target/release/würfeln
+      - run: "ls"
   build_windows_x86:
     name: Windows
     runs-on: ubuntu-latest
@@ -71,3 +73,4 @@ jobs:
         with:
           name: würfeln-x86_64-pc-windows-gnu.exe
           path: target/release/würfeln
+      - run: "ls"
