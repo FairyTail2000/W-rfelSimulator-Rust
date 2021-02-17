@@ -48,7 +48,7 @@ impl PrintResult for Results {
 
 			if old_style {
 				for (index, result) in self.data.iter().enumerate() {
-					if result != 0 {
+					if *result != 0 {
 						println!("Augenzahl: {}\tErgebnis: {}", index + 1, result)
 					}
 				}
