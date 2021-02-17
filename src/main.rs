@@ -4,9 +4,8 @@ mod colored_dice;
 use std::io;
 use std::io::Write;
 use std::process::exit;
-use format_num::format_num;
 use clap::{Arg, App};
-//use random_integer;
+use crate::normal_dice::PrintResult;
 
 const ALLOWED_DICE_SITES: [u8; 8] = [2, 3, 4, 6, 8, 10, 20, 100];
 const ALLOWED_COLOURED_DICES: [(&str, &str); 4] = [("Rosa", "r"), ("Weiß", "w"), ("Grün", "g"), ("Schwarz", "s")];
@@ -38,7 +37,7 @@ fn print_startup_informations(allowed_coloured_dices: [(&str, &str); 4], allowed
 	println!("{}", vector.join(""));
 }
 
-fn handle_input(input: String, _old_report_style: bool) -> bool {
+fn handle_input(input: String, old_report_style: bool) -> bool {
 	return if input == "exit" || input == "e" {
 		true
 	} else if input == "help" || input == "h" {
@@ -53,9 +52,8 @@ fn handle_input(input: String, _old_report_style: bool) -> bool {
 			if ALLOWED_DICE_SITES.contains(&sides) {
 				let amount = ask_for_amount(std::u64::MAX);
 
-
-
-				println!("Jup sieht gut aus: {}", amount);
+				let res = normal_dice::roll(amount, sides);
+				res.print_results(old_report_style);
 			} else {
 				println!("Die ist nicht erlaubt...");
 			}
@@ -67,7 +65,6 @@ fn handle_input(input: String, _old_report_style: bool) -> bool {
 }
 
 fn ask_for_amount(max: u64) -> u64 {
-	println!("Max: {}", format_num!("d", max as f64));
 	println!("Max: {}", max);
 
 	loop {
@@ -105,12 +102,17 @@ fn main() {
 		.arg(Arg::new("old_style")
 			.short('o')
 			.long("old_style")
-			.about("Nutzt den alten style um das ergebnis anzuzeigen")
+			.about("Nutzt den alten style um das Ergebnis anzuzeigen")
 		)
 		.arg(Arg::new("no tutorial")
 			.short('n')
 			.long("no-tutorial")
 			.about("Gives you no tutorial messages")
+		)
+		.arg(Arg::new("no summary message")
+			.short('s')
+			.long("no-summary-message")
+			.about("Disables ")
 		)
 		.get_matches();
 
@@ -123,7 +125,7 @@ fn main() {
 	}
 
 	while !finished {
-		print!("Tell me something: ");
+		print!("Seitenanzahl: ");
 		let res = io::stdout().flush();
 		if let Err(_e) = res {
 			exit(-1)
