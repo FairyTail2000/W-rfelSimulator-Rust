@@ -70,4 +70,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: würfeln-x86_64-pc-windows-gnu.exe
-          path: target/x86_64-pc-windows-gnu/release/würfeln
+          path: target/x86_64-pc-windows-gnu/release/würfeln.exe
