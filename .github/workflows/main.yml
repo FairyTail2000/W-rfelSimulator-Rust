@@ -32,7 +32,9 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-armv7-unknown-linux-gnueabihf
-          path: target/armv7-unknown-linux-gnueabihf/release/würfeln
+          path: |
+            target/armv7-unknown-linux-gnueabihf/release/würfeln
+            *.yaml
   build_linux_x86:
     name: Linux x86_64
     runs-on: ubuntu-latest
@@ -51,7 +53,9 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-x86_64-unknown-linux-gnu
-          path: target/x86_64-unknown-linux-gnu/release/würfeln
+          path: |
+            target/x86_64-unknown-linux-gnu/release/würfeln
+             *.yaml
   build_windows_x86:
     name: Windows
     runs-on: ubuntu-latest
@@ -69,5 +73,7 @@ jobs:
           args: --target x86_64-pc-windows-gnu --release --all-features
       - uses: actions/upload-artifact@v2
         with:
-          name: wuerfeln-x86_64-pc-windows-gnu.exe
-          path: target/x86_64-pc-windows-gnu/release/würfeln.exe
+          name: wuerfeln-x86_64-pc-windows-gnu
+          path: |
+            target/x86_64-pc-windows-gnu/release/würfeln.exe
+            *.yaml

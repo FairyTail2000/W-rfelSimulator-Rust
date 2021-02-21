@@ -1,0 +1,17 @@
+dices:
+  - long: Rosa
+    short: r
+    sites: [0, 0, 0, 1, 1, 2]
+    value: 1
+  - long: Grün
+    short: g
+    sites: [0, 0, 1, 1, 2, 2]
+    value: 2
+  - long: Weiß
+    short: w
+    sites: [0, 1, 2, 2, 2, 3]
+    value: 3
+  - long: Schwarz
+    short: s
+    sites: [0, 1, 2, 2, 3, 4]
+    value: 4

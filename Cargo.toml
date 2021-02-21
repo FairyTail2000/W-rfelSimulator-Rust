@@ -8,5 +8,7 @@ edition = "2018"
 
 [dependencies]
 random-integer = "1.2.1"
-format_num = "0.1.0"
 clap = "3.0.0-beta.2"
+dialoguer = "0.7.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"

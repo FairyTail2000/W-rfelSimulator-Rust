@@ -1,0 +1,9 @@
+dices:
+  - sides: 2
+  - sides: 3
+  - sides: 4
+  - sides: 6
+  - sides: 8
+  - sides: 10
+  - sides: 20
+  - sides: 100
