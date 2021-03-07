@@ -1,24 +1,33 @@
+#[macro_use] mod macros;
 mod normal_dice;
 mod colored_dice;
 mod preferences;
+mod color;
 
 use std::io;
 use std::io::Write;
 use std::process::exit;
 use clap::{Arg, App};
 use dialoguer::{Select, Input, MultiSelect};
-use crate::normal_dice::PrintResult;
+use crate::normal_dice::{PrintResult, Dices, Dice};
 use dialoguer::console::Term;
 use std::borrow::Borrow;
 use std::io::Error;
-use crate::preferences::{ColoredDices, Dices, Settings, Dice, ColoredDice};
+use crate::preferences::{Settings};
+use crate::colored_dice::{ColoredDices, ColoredDice};
+use crate::color::get_color;
+use ansi_term::Colour;
+#[cfg(debug_assertions)]
+	use std::time::{SystemTime};
 
 /**
 * Prints basic information's about the usage of the program
 * Also used for help message
 */
 fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice_sites: &Dices) {
-	print!("Erlaubte Würfelseiten:");
+	#[cfg(not(debug_assertions))]
+		print!("Erlaubte Würfelseiten:");
+	dbgprint!("Erlaubte Würfelseiten:");
 	// Faster writing to the terminal because values are not waiting to be written to std::io::stdout
 	let mut vector: Vec<String> = vec![];
 	for ( index, site) in allowed_dice_sites.dices.iter().enumerate() {
@@ -27,16 +36,29 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
 			vector.push((*format!(",")).parse().unwrap());
 		}
 	}
-	println!("{}", vector.join(""));
+	#[cfg(not(debug_assertions))]
+		println!("{}", vector.join(""));
+	dbgprintln!("{}", vector.join(""));
+
 	vector.clear();
-	print!("Erlaubte farbige Seiten:");
+
+	#[cfg(not(debug_assertions))]
+		print!("Erlaubte farbige Seiten:");
+	dbgprint!("Erlaubte farbige Seiten:");
+
 	for (index, site) in allowed_coloured_dices.dices.iter().enumerate() {
-		vector.push((*format!(" {} ({})", site.long, site.short)).parse().unwrap());
+		let color: Colour = get_color(&site.color);
+
+		vector.push((*format!(" {} ({})", color.paint(&site.long), site.short)).parse().unwrap());
 		if allowed_coloured_dices.len() != index + 1 {
 			vector.push((*format!(",")).parse().unwrap());
 		}
 	}
-	println!("{}", vector.join(""));
+
+	#[cfg(not(debug_assertions))]
+		println!("{}", vector.join(""));
+	dbgprintln!("{}", vector.join(""));
+
 	let res = io::stdout().flush();
 	if let Err(_e) = res {
 		exit(-1)
@@ -44,8 +66,6 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
 }
 
 fn handle_input(input: String, old_report_style: bool, allowed_colored_dices: &ColoredDices, allowed_dice_sites: &Dices, error_message: &str) -> bool {
-
-
 	return if input == "exit" || input == "e" {
 		true
 	} else if input == "help" || input == "h" {
@@ -54,7 +74,9 @@ fn handle_input(input: String, old_report_style: bool, allowed_colored_dices: &C
 	} else {
 		let parsed = input.parse::<u8>();
 		if let Err(_err) = parsed {
-			println!("Es muss eine Ganzzahl sein, wie oben beschrieben");
+			#[cfg(not(debug_assertions))]
+				println!("Es muss eine Ganzzahl sein, wie oben beschrieben");
+			dbgprintln!("Es muss eine Ganzzahl sein, wie oben beschrieben");
 			false
 		} else if let Ok(sides) = parsed {
 			if allowed_dice_sites.dices.contains(&Dice { sides }) {
@@ -63,7 +85,9 @@ fn handle_input(input: String, old_report_style: bool, allowed_colored_dices: &C
 				let res = normal_dice::roll(amount, sides);
 				res.print_results(old_report_style);
 			} else {
-				println!("Die ist nicht erlaubt...");
+				#[cfg(not(debug_assertions))]
+					println!("Die ist nicht erlaubt...");
+				dbgprintln!("Die ist nicht erlaubt...")
 			}
 			false
 		} else {
@@ -122,15 +146,28 @@ fn main() -> std::io::Result<()> {
 		)
 		.get_matches();
 
+	#[cfg(debug_assertions)]
+		let start: SystemTime = SystemTime::now();
+	dbgprintln!("Loading Configuration");
+
+	let preferences = Settings::load();
+	let colored_dice = ColoredDices::load();
+	let normal_dices = Dices::load();
+
+	dbgprintln!("Loading Configuration finished, took {} ms", start.elapsed().unwrap().as_millis());
+
 	let old = matches.is_present("old_style");
 	let no_dice_select = matches.is_present("no select dice select");
 	let number_instead = matches.is_present("number instead");
 
-	let colored_dice = ColoredDices::load();
-	let normal_dices = Dices::load();
-	let _preferences = Settings::load();
+	#[cfg(debug_assertions)]
+		let error_message = format!("{} {}: Nur Zahlen sind erlaubt! Maximal {}", file!(), line!(), std::u64::MAX);
+	#[cfg(not(debug_assertions))]
+		let error_message = format!("Nur Zahlen sind erlaubt! Maximal {}", std::u64::MAX);
 
-	let error_message = format!("Nur Zahlen sind erlaubt! Maximal {}", std::u64::MAX);
+	dbgprintln!("{:?}", preferences);
+	dbgprintln!("{:?}", colored_dice);
+	dbgprintln!("{:?}", normal_dices);
 
 	let mut finished = false;
 	if !matches.is_present("no tutorial") {
@@ -176,10 +213,20 @@ fn main() -> std::io::Result<()> {
 
 				let mut accumulated_result: u64 = 0;
 				for result in dices {
+
+					dbgprintln!("{}: {}", result.3, result.2);
+
+					#[cfg(not(debug_assertions))]
 					println!("{}: {}", result.3, result.2);
+
 					accumulated_result += result.2;
 				}
-				println!("Insgesamt: {} ({})", accumulated_result, accumulated_result * 10)
+
+				dbgprintln!("Insgesamt: {} ({})", accumulated_result, accumulated_result * 10);
+
+				#[cfg(not(debug_assertions))]
+				println!("Insgesamt: {} ({})", accumulated_result, accumulated_result * 10);
+
 
 			} else {
 				// Use multiselect...
@@ -192,17 +239,38 @@ fn main() -> std::io::Result<()> {
 					.with_prompt("Wähle deine farbigen Würfel (Mit der Leertaste auswählen und Enter bestätigen)")
 					.interact_on(&Term::stderr())?;
 				if selection.len() == 0 {
-					println!("Nichts gewählt.");
+					dbgprintln!("Nichts gewählt.");
+					#[cfg(not(debug_assertions))]
+						println!("Nichts gewählt.");
+
 					continue;
 				}
 
-				let mut amounts: Vec<(&String, [u8; 6], u64)> = Vec::new();
-
+				let mut result: Vec<(&String, u64)> = Vec::new();
+				let mut accumulated_amount: u64 = 0;
 				for select in selection {
 					let sel= colored_dice.dices.get(select).unwrap();
-					amounts.push((&sel.long, sel.sites, ask_for_amount(error_message.as_str(), &*format!("Anzahl {}", sel.long))))
+					let amount = ask_for_amount(error_message.as_str(), &*format!("Anzahl {}", sel.long));
+					// Amount but shorter
+					let mut am: u64 = 0;
+					for _ in 0..amount {
+						am += *(sel.get_random()) as u64;
+					}
+					accumulated_amount += am;
+					result.push((&sel.long, am))
 				}
 
+
+				for res in result {
+
+					dbgprintln!("{}: {}", res.0, res.1);
+					dbgprintln!("Insgesamt: {} ({})", accumulated_amount, accumulated_amount * 10);
+
+					#[cfg(not(debug_assertions))]
+					println!("{}: {}", res.0, res.1);
+					#[cfg(not(debug_assertions))]
+					println!("Insgesamt: {} ({})", accumulated_amount, accumulated_amount * 10)
+				}
 			}
 		} else if answer.unwrap() == &"Hilfe" {
 			finished = handle_input("h".parse().unwrap(), old, &colored_dice, &normal_dices, error_message.as_str());
@@ -210,9 +278,13 @@ fn main() -> std::io::Result<()> {
 			finished = true;
 		} else {
 			if no_dice_select {
+				dbgprint!("Seitenanzahl: ");
+				#[cfg(not(debug_assertions))]
 				print!("Seitenanzahl: ");
 			} else {
-				println!("Seitenanzahl: ");
+				dbgprint!("Seitenanzahl: ");
+				#[cfg(not(debug_assertions))]
+				print!("Seitenanzahl: ");
 			}
 			let res = io::stdout().flush();
 			if let Err(_e) = res {

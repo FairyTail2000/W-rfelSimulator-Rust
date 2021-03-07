@@ -1,5 +1,12 @@
+use serde::{Serialize, Deserialize};
 use random_integer::random_u8;
 use std::vec::Vec;
+use std::path::Path;
+use std::fs::File;
+use std::io::BufReader;
+
+const NORMAL_DICES_FILE: &str = "normal.yaml";
+
 /**
 Contains the information of one result
 */
@@ -25,21 +32,37 @@ impl PrintResult for Results {
 
 			if old_style {
 				for (index, result) in self.data.iter().enumerate() {
-					println!("{}: {}", index + 1, result);
+					dbgprintln!("{}: {}", index + 1, result);
+					#[cfg(not(debug_assertions))]
+						println!("{}: {}", index + 1, result);
 				}
-				println!("\n")
+				dbgprintln!("\n");
+				#[cfg(not(debug_assertions))]
+					println!("\n")
 			}
 
 			for (index, datapoint) in accumulated.iter().enumerate() {
-				println!("{}: {}", index + 1, datapoint);
+				dbgprintln!("{}: {}", index + 1, datapoint);
+				#[cfg(not(debug_assertions))]
+					println!("{}: {}", index + 1, datapoint);
 			}
 
-			println!("Misserfolge: {}", accumulated[0]); // 1
-			println!("Misserfolge (improvisert): {}", accumulated[0] + accumulated[1]); // 1 + 2
-			println!("Misserfolge (Pechphiole): {}", accumulated[0] + accumulated[1] + accumulated[2]); // 1 + 2 + 3
-			println!("Erfolge (Wealthphiole): {}", accumulated[2] + accumulated[3] + accumulated[4] + accumulated[5]); // 3 + 4 + 5 + 6
-			println!("Erfolge (Glücksphiole): {}", accumulated[3] + accumulated[4] + accumulated[5]); // 4 + 5 + 6
-			println!("Erfolge: {}", accumulated[4] + accumulated[5]); // 5 + 6
+			dbgprintln!("Misserfolge: {}", accumulated[0]); // 1
+			dbgprintln!("Misserfolge (improvisert): {}", accumulated[0] + accumulated[1]); // 1 + 2
+			dbgprintln!("Misserfolge (Pechphiole): {}", accumulated[0] + accumulated[1] + accumulated[2]); // 1 + 2 + 3
+			dbgprintln!("Erfolge (Wealthphiole): {}", accumulated[2] + accumulated[3] + accumulated[4] + accumulated[5]); // 3 + 4 + 5 + 6
+			dbgprintln!("Erfolge (Glücksphiole): {}", accumulated[3] + accumulated[4] + accumulated[5]); // 4 + 5 + 6
+			dbgprintln!("Erfolge: {}", accumulated[4] + accumulated[5]); // 5 + 6
+
+			#[cfg(not(debug_assertions))]
+			{
+				println!("Misserfolge: {}", accumulated[0]); // 1
+				println!("Misserfolge (improvisert): {}", accumulated[0] + accumulated[1]); // 1 + 2
+				println!("Misserfolge (Pechphiole): {}", accumulated[0] + accumulated[1] + accumulated[2]); // 1 + 2 + 3
+				println!("Erfolge (Wealthphiole): {}", accumulated[2] + accumulated[3] + accumulated[4] + accumulated[5]); // 3 + 4 + 5 + 6
+				println!("Erfolge (Glücksphiole): {}", accumulated[3] + accumulated[4] + accumulated[5]); // 4 + 5 + 6
+				println!("Erfolge: {}", accumulated[4] + accumulated[5]); // 5 + 6
+			}
 		} else {
 			let mut sum: u64 = 0;
 			for number in &self.data {
@@ -49,15 +72,21 @@ impl PrintResult for Results {
 			if old_style {
 				for (index, result) in self.data.iter().enumerate() {
 					if *result != 0 {
-						println!("Augenzahl: {}\tErgebnis: {}", index + 1, result)
+						dbgprintln!("Augenzahl: {}\tErgebnis: {}", index + 1, result);
+						#[cfg(not(debug_assertions))]
+							println!("Augenzahl: {}\tErgebnis: {}", index + 1, result)
 					}
 				}
 				println!();
 			}
-			println!("Summe: {}", sum);
+			dbgprintln!("Summe: {}", sum);
+			#[cfg(not(debug_assertions))]
+				println!("Summe: {}", sum);
 
 		}
-		println!("Es wurde mit {} {} gewürfelt {} {} {} {}\n", self.count, if self.count == 1 {"Würfel"} else {"Würfeln"}, if self.count == 1 {"welcher"} else {"welche"}, self.sides, if self.sides == 1 {"Seite"} else {"Seiten"}, if self.sides == 1 {"hatte"} else {"hatten"});
+		dbgprintln!("Es wurde mit {} {} gewürfelt {} {} {} {}\n", self.count, if self.count == 1 {"Würfel"} else {"Würfeln"}, if self.count == 1 {"welcher"} else {"welche"}, self.sides, if self.sides == 1 {"Seite"} else {"Seiten"}, if self.sides == 1 {"hatte"} else {"hatten"});
+		#[cfg(not(debug_assertions))]
+			println!("Es wurde mit {} {} gewürfelt {} {} {} {}\n", self.count, if self.count == 1 {"Würfel"} else {"Würfeln"}, if self.count == 1 {"welcher"} else {"welche"}, self.sides, if self.sides == 1 {"Seite"} else {"Seiten"}, if self.sides == 1 {"hatte"} else {"hatten"});
 	}
 }
 
@@ -73,4 +102,36 @@ pub fn roll(amount: u64, sides: u8) -> Results {
 	}
 
 	results
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Dice {
+	pub sides: u8
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Dices {
+	pub dices: Vec<Dice>
+}
+
+impl Dices {
+	pub fn load() -> Self {
+		let exists = Path::new(NORMAL_DICES_FILE).exists();
+		return if exists {
+			let file = File::open(NORMAL_DICES_FILE).unwrap();
+			let buf_reader = BufReader::new(file);
+			let parsed = serde_yaml::from_reader::<BufReader<File>, Dices>(buf_reader);
+			if let Ok(result) = parsed {
+				result
+			} else {
+				Dices::default()
+			}
+		} else {
+			Dices::default()
+		}
+	}
+
+	pub fn len(&self) -> usize {
+		return self.dices.len();
+	}
 }

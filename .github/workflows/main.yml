@@ -29,11 +29,22 @@ jobs:
           use-cross: true
           command: build
           args: --target armv7-unknown-linux-gnueabihf --release --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target armv7-unknown-linux-gnueabihf --all-features
+      - name: Copy binaries
+        run: |
+          mv target/armv7-unknown-linux-gnueabihf/release/würfeln ./
+          mv target/armv7-unknown-linux-gnueabihf/debug/würfeln ./debug-würfeln
+
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-armv7-unknown-linux-gnueabihf
           path: |
             target/armv7-unknown-linux-gnueabihf/release/würfeln
+            target/armv7-unknown-linux-gnueabihf/debug/würfeln
             *.yaml
   build_linux_x86:
     name: Linux x86_64
@@ -50,11 +61,22 @@ jobs:
           use-cross: true
           command: build
           args: --target x86_64-unknown-linux-gnu --release --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-unknown-linux-gnu --all-features
+      - name: Copy binaries
+        run: |
+          mv target/x86_64-unknown-linux-gnu/release/würfeln ./
+          mv target/x86_64-unknown-linux-gnu/debug/würfeln ./debug-würfeln
+
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-x86_64-unknown-linux-gnu
           path: |
-            target/x86_64-unknown-linux-gnu/release/würfeln
+            würfeln
+            debug-würfeln
              *.yaml
   build_windows_x86:
     name: Windows
@@ -71,9 +93,19 @@ jobs:
           use-cross: true
           command: build
           args: --target x86_64-pc-windows-gnu --release --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-pc-windows-gnu --all-features
+      - name: Copy binaries
+        run: |
+          mv target/x86_64-pc-windows-gnu/release/würfeln.exe ./
+          mv target/x86_64-pc-windows-gnu/debug/würfeln.exe ./würfeln-debug.exe
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-x86_64-pc-windows-gnu
           path: |
-            target/x86_64-pc-windows-gnu/release/würfeln.exe
+            würfeln.exe
+            würfeln-debug.exe
             *.yaml
