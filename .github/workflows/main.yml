@@ -43,8 +43,8 @@ jobs:
         with:
           name: wuerfeln-armv7-unknown-linux-gnueabihf
           path: |
-            target/armv7-unknown-linux-gnueabihf/release/würfeln
-            target/armv7-unknown-linux-gnueabihf/debug/würfeln
+            würfeln
+            debug-würfeln
             *.yaml
   build_linux_x86:
     name: Linux x86_64
