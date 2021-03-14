@@ -3,3 +3,4 @@ old_style: true
 no_tutorial: false
 no_summary_message: false
 no_select_dice_select: false
+number_instead: true
