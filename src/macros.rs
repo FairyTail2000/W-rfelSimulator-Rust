@@ -9,6 +9,10 @@ macro_rules! dbgprintln {
 	        let formatted = format!($($arg)*);
 			println!("{} {}: {}", file!(), line!(), formatted)
         }
+        #[cfg(not(debug_assertions))]
+        {
+			println!($($arg)*)
+        }
     })
 }
 
@@ -22,6 +26,10 @@ macro_rules! dbgprint {
         {
 	        let formatted = format!($($arg)*);
 			print!("{} {}: {}", file!(), line!(), formatted)
+        }
+        #[cfg(not(debug_assertions))]
+        {
+			print!($($arg)*)
         }
     })
 }

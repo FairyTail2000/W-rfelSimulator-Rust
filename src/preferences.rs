@@ -17,6 +17,7 @@ pub struct Settings {
 
 impl Settings {
     pub fn load() -> Self {
+        #[cfg(debug_assertions)]
         dbgprintln!("Loading Settings from {}", PREFERENCE_FILE);
         let exists = Path::new(PREFERENCE_FILE).exists();
         return if exists {
@@ -38,20 +39,14 @@ impl Settings {
                     ) {
                         Ok(_) => {
                             dbgprintln!("Neue Einstellungen wurden erzeugt");
-                            #[cfg(not(debug_assertions))]
-                            println!("Neue Einstellungen wurden erzeugt");
                         }
                         Err(err) => {
                             dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
-                            #[cfg(not(debug_assertions))]
-                            println!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()))
                         }
                     }
                 }
                 Err(err) => {
                     dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
-                    #[cfg(not(debug_assertions))]
-                    println!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()))
                 }
             }
 

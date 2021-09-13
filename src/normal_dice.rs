@@ -142,7 +142,7 @@ impl PrintResult for Results {
 
 pub fn roll(amount: u64, sides: u8) -> Results {
     let mut results = Results {
-        data: vec![],
+        data: Vec::with_capacity(amount as usize),
         sides,
         count: amount,
     };
