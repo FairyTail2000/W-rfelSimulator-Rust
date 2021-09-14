@@ -131,13 +131,12 @@ jobs:
           args: --target aarch64-linux-android --all-features
       - name: Copy binaries
         run: |
-          ls -lsAR
           mv target/aarch64-linux-android/release/würfeln ./
           mv target/aarch64-linux-android/debug/würfeln ./würfeln-debug
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-aarch64-linux-android
           path: |
-            würfeln.exe
-            würfeln-debug.exe
+            würfeln
+            würfeln-debug
             *.yaml
