@@ -4,6 +4,7 @@ mod color;
 mod colored_dice;
 mod normal_dice;
 mod preferences;
+mod tests;
 
 use crate::color::get_color;
 use crate::colored_dice::{ColoredDice, ColoredDices};
@@ -17,6 +18,7 @@ use std::borrow::Borrow;
 use std::io;
 use std::io::Error;
 use std::io::Write;
+use std::ops::Deref;
 use std::process::exit;
 #[cfg(debug_assertions)]
 use std::time::SystemTime;
@@ -41,7 +43,13 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
     dbgprint!("Erlaubte farbige Seiten:");
 
     for (index, site) in allowed_coloured_dices.dices.iter().enumerate() {
-        let color: Colour = get_color(&site.color);
+        let color: Colour = match get_color(&site.color) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("{}", e.deref());
+                exit(-1);
+            }
+        };
 
         vector.push(
             (*format!(" {} ({})", color.paint(&site.long), site.short))

@@ -33,18 +33,12 @@ impl PrintResult for Results {
             if old_style {
                 for (index, result) in self.data.iter().enumerate() {
                     dbgprintln!("{}: {}", index + 1, result);
-                    #[cfg(not(debug_assertions))]
-                    println!("{}: {}", index + 1, result);
                 }
                 dbgprintln!("\n");
-                #[cfg(not(debug_assertions))]
-                println!("\n")
             }
 
             for (index, datapoint) in accumulated.iter().enumerate() {
                 dbgprintln!("{}: {}", index + 1, datapoint);
-                #[cfg(not(debug_assertions))]
-                println!("{}: {}", index + 1, datapoint);
             }
 
             dbgprintln!("Misserfolge: {}", accumulated[0]); // 1
@@ -65,28 +59,6 @@ impl PrintResult for Results {
                 accumulated[3] + accumulated[4] + accumulated[5]
             ); // 4 + 5 + 6
             dbgprintln!("Erfolge: {}", accumulated[4] + accumulated[5]); // 5 + 6
-
-            #[cfg(not(debug_assertions))]
-            {
-                println!("Misserfolge: {}", accumulated[0]); // 1
-                println!(
-                    "Misserfolge (improvisert): {}",
-                    accumulated[0] + accumulated[1]
-                ); // 1 + 2
-                println!(
-                    "Misserfolge (Pechphiole): {}",
-                    accumulated[0] + accumulated[1] + accumulated[2]
-                ); // 1 + 2 + 3
-                println!(
-                    "Erfolge (Wealthphiole): {}",
-                    accumulated[2] + accumulated[3] + accumulated[4] + accumulated[5]
-                ); // 3 + 4 + 5 + 6
-                println!(
-                    "Erfolge (Glücksphiole): {}",
-                    accumulated[3] + accumulated[4] + accumulated[5]
-                ); // 4 + 5 + 6
-                println!("Erfolge: {}", accumulated[4] + accumulated[5]); // 5 + 6
-            }
         } else {
             let mut sum: u64 = 0;
             for number in &self.data {
@@ -97,33 +69,15 @@ impl PrintResult for Results {
                 for (index, result) in self.data.iter().enumerate() {
                     if *result != 0 {
                         dbgprintln!("Augenzahl: {}\tErgebnis: {}", index + 1, result);
-                        #[cfg(not(debug_assertions))]
-                        println!("Augenzahl: {}\tErgebnis: {}", index + 1, result)
                     }
                 }
                 println!();
             }
             dbgprintln!("Summe: {}", sum);
-            #[cfg(not(debug_assertions))]
-            println!("Summe: {}", sum);
         }
 
         if !no_summary {
             dbgprintln!(
-                "Es wurde mit {} {} gewürfelt {} {} {} {}\n",
-                self.count,
-                if self.count == 1 {
-                    "Würfel"
-                } else {
-                    "Würfeln"
-                },
-                if self.count == 1 { "welcher" } else { "welche" },
-                self.sides,
-                if self.sides == 1 { "Seite" } else { "Seiten" },
-                if self.sides == 1 { "hatte" } else { "hatten" }
-            );
-            #[cfg(not(debug_assertions))]
-            println!(
                 "Es wurde mit {} {} gewürfelt {} {} {} {}\n",
                 self.count,
                 if self.count == 1 {
@@ -146,11 +100,9 @@ pub fn roll(amount: u64, sides: u8) -> Results {
         sides,
         count: amount,
     };
-
     for _ in 0..amount {
         results.data.push(random_u8(1, sides))
     }
-
     results
 }
 

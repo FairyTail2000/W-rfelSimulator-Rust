@@ -109,3 +109,34 @@ jobs:
             würfeln.exe
             würfeln-debug.exe
             *.yaml
+  build_android_aarch64:
+    name: Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-linux-android
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target aarch64-linux-android --release --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target aarch64-linux-android --all-features
+      - name: Copy binaries
+        run: |
+          mv target/aarch64-linux-android/release/würfeln ./
+          mv target/aarch64-linux-android/debug/würfeln ./würfeln-debug
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wuerfeln-aarch64-linux-android
+          path: |
+            würfeln.exe
+            würfeln-debug.exe
+            *.yaml
