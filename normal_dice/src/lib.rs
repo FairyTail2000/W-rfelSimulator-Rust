@@ -1,7 +1,9 @@
+use ansi_term::Colour;
+use macros::dbgprintln;
 use random_integer::random_u8;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, BufWriter};
 use std::path::Path;
 use std::vec::Vec;
 
@@ -9,19 +11,15 @@ const NORMAL_DICES_FILE: &str = "normal.yaml";
 
 /**
 Contains the information of one result
-*/
+ */
 pub struct Results {
     data: Vec<u8>,
     sides: u8,
     count: u64,
 }
 
-pub trait PrintResult {
-    fn print_results(&self, old_style: bool, no_summary: bool);
-}
-
-impl PrintResult for Results {
-    fn print_results(&self, old_style: bool, no_summary: bool) {
+impl Results {
+    pub fn print_results(&self, old_style: bool, no_summary: bool) {
         println!("\n");
         if self.sides == 6 {
             let mut accumulated: [u64; 6] = [0, 0, 0, 0, 0, 0];
@@ -117,20 +115,34 @@ pub struct Dices {
 }
 
 impl Dices {
-    pub fn load() -> Self {
-        let exists = Path::new(NORMAL_DICES_FILE).exists();
-        return if exists {
-            let file = File::open(NORMAL_DICES_FILE).unwrap();
+    pub fn load(file: Option<&str>) -> Self {
+        let file_name = file.unwrap_or(NORMAL_DICES_FILE);
+        let exists = Path::new(file_name).exists();
+        if exists {
+            let file = File::open(file_name).unwrap();
             let buf_reader = BufReader::new(file);
-            let parsed = serde_yaml::from_reader::<BufReader<File>, Dices>(buf_reader);
-            if let Ok(result) = parsed {
-                result
-            } else {
-                Dices::default()
-            }
+            serde_yaml::from_reader::<BufReader<File>, Dices>(buf_reader)
+                .unwrap_or(Dices::default())
         } else {
+            match File::create(file_name) {
+                Ok(file) => {
+                    let writer = BufWriter::new(file);
+                    match serde_yaml::to_writer::<BufWriter<File>, Dices>(writer, &Dices::default())
+                    {
+                        Ok(_) => {
+                            dbgprintln!("Neue Einstellungen wurden erzeugt");
+                        }
+                        Err(err) => {
+                            dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
+                        }
+                    }
+                }
+                Err(err) => {
+                    dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
+                }
+            }
             Dices::default()
-        };
+        }
     }
 
     pub fn len(&self) -> usize {

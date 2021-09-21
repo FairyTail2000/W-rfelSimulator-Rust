@@ -65,6 +65,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "colored_dice"
+version = "1.0.0"
+dependencies = [
+ "ansi_term 0.12.1",
+ "macros",
+ "random-integer",
+ "serde",
+ "serde_yaml",
+]
+
+[[package]]
 name = "console"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -167,6 +178,21 @@ name = "linked-hash-map"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
+
+[[package]]
+name = "macros"
+version = "1.0.0"
+
+[[package]]
+name = "normal_dice"
+version = "1.0.0"
+dependencies = [
+ "ansi_term 0.12.1",
+ "macros",
+ "random-integer",
+ "serde",
+ "serde_yaml",
+]
 
 [[package]]
 name = "ppv-lite86"
@@ -455,10 +481,14 @@ version = "1.0.0"
 dependencies = [
  "ansi_term 0.12.1",
  "clap",
+ "colored_dice",
  "dialoguer",
+ "macros",
+ "normal_dice",
  "random-integer",
  "serde",
  "serde_yaml",
+ "zerfallsreihen",
 ]
 
 [[package]]
@@ -469,6 +499,10 @@ checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
 dependencies = [
  "linked-hash-map",
 ]
+
+[[package]]
+name = "zerfallsreihen"
+version = "1.0.0"
 
 [[package]]
 name = "zeroize"

@@ -1,4 +1,5 @@
 use ansi_term::Colour;
+use macros::dbgprintln;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -16,21 +17,18 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn load() -> Self {
+    pub fn load(file: Option<&str>) -> Self {
+        let file_name = file.unwrap_or(PREFERENCE_FILE);
         #[cfg(debug_assertions)]
-        dbgprintln!("Loading Settings from {}", PREFERENCE_FILE);
-        let exists = Path::new(PREFERENCE_FILE).exists();
-        return if exists {
-            let file = File::open(PREFERENCE_FILE).unwrap();
+        dbgprintln!("Loading Settings from {}", file_name);
+        let exists = Path::new(file_name).exists();
+        if exists {
+            let file = File::open(file_name).unwrap();
             let buf_reader = BufReader::new(file);
             let parsed = serde_yaml::from_reader::<BufReader<File>, Settings>(buf_reader);
-            if let Ok(result) = parsed {
-                result
-            } else {
-                Settings::default()
-            }
+            parsed.unwrap_or(Settings::default())
         } else {
-            match File::create(PREFERENCE_FILE) {
+            match File::create(file_name) {
                 Ok(file) => {
                     let writer = BufWriter::new(file);
                     match serde_yaml::to_writer::<BufWriter<File>, Settings>(
@@ -51,6 +49,6 @@ impl Settings {
             }
 
             Settings::default()
-        };
+        }
     }
 }

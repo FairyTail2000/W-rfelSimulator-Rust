@@ -21,7 +21,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn color_failing() -> () {
-        get_color("#F").expect("Color decoding fail");
+        get_color("#F").expect("Color decoding fail ");
     }
 
     #[test]

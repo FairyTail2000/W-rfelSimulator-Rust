@@ -1,27 +1,35 @@
-#[macro_use]
-mod macros;
 mod color;
-mod colored_dice;
-mod normal_dice;
 mod preferences;
 mod tests;
 
 use crate::color::get_color;
-use crate::colored_dice::{ColoredDice, ColoredDices};
-use crate::normal_dice::{Dice, Dices, PrintResult};
 use crate::preferences::Settings;
 use ansi_term::Colour;
 use clap::{App, Arg};
+use colored_dice::{ColoredDice, ColoredDices};
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
+use macros::{dbgprint, dbgprintln};
+use normal_dice::{Dice, Dices};
 use std::borrow::Borrow;
 use std::io;
-use std::io::Error;
-use std::io::Write;
+use std::io::{Error, Write};
 use std::ops::Deref;
 use std::process::exit;
 #[cfg(debug_assertions)]
 use std::time::SystemTime;
+use zerfallsreihen::State;
+
+const RADIO_OPTIONS: &'static [&str] = &[
+    "Alpha",
+    "Beta hin",
+    "Beta Rück",
+    "Beta Hin Minus",
+    "Beta Rück Plus",
+    "Gamma",
+    "Delta",
+    "Aufhören",
+];
 
 /**
 * Prints basic information's about the usage of the program
@@ -77,7 +85,7 @@ fn handle_input(
     error_message: &str,
     no_summary: bool,
 ) -> bool {
-    return if input == "exit" || input == "e" {
+    if input == "exit" || input == "e" {
         true
     } else if input == "help" || input == "h" {
         print_startup_information(allowed_colored_dices, allowed_dice_sites);
@@ -100,7 +108,7 @@ fn handle_input(
         } else {
             false
         }
-    };
+    }
 }
 
 fn ask_for_amount(error_message: &str, prompt: &str) -> u64 {
@@ -158,9 +166,9 @@ fn main() -> std::io::Result<()> {
     #[cfg(debug_assertions)]
     dbgprintln!("Loading Configuration");
 
-    let preferences = Settings::load();
-    let colored_dice = ColoredDices::load();
-    let normal_dices = Dices::load();
+    let preferences = Settings::load(None);
+    let colored_dice = ColoredDices::load(None);
+    let normal_dices = Dices::load(None);
 
     #[cfg(debug_assertions)]
     dbgprintln!(
@@ -199,7 +207,13 @@ fn main() -> std::io::Result<()> {
     }
 
     while !finished {
-        let items = vec!["Farbiger Würfel", "Normaler Würfel", "Hilfe", "Verlassen"];
+        let items = vec![
+            "Farbiger Würfel",
+            "Normaler Würfel",
+            "Zerfallsreihen",
+            "Hilfe",
+            "Verlassen",
+        ];
         let selection = Select::new()
             .items(&items)
             .default(1)
@@ -210,9 +224,9 @@ fn main() -> std::io::Result<()> {
             continue;
         }
 
-        let answer = items.get(selection.unwrap());
+        let answer = items.get(selection.unwrap()).unwrap();
 
-        if answer.unwrap() == &"Farbiger Würfel" {
+        if answer == &"Farbiger Würfel" {
             let mut possibilities: Vec<&str> = vec![];
             if number_instead {
                 //Input a number and auto compute values
@@ -284,7 +298,7 @@ fn main() -> std::io::Result<()> {
                     );
                 }
             }
-        } else if answer.unwrap() == &"Hilfe" {
+        } else if answer == &"Hilfe" {
             finished = handle_input(
                 "h".parse().unwrap(),
                 old,
@@ -293,8 +307,99 @@ fn main() -> std::io::Result<()> {
                 error_message.as_str(),
                 no_summary_message,
             );
-        } else if answer.unwrap() == &"Verlassen" {
+        } else if answer == &"Verlassen" {
             finished = true;
+        } else if answer == &"Zerfallsreihen" {
+            let stdout = Term::stdout();
+            let protons_input: Result<String, Error> = Input::new()
+                .with_prompt("Protonen")
+                .validate_with(|val: &String| {
+                    let new_val = val.trim();
+                    if new_val.is_empty() {
+                        return Err("Bitte etwas eingeben");
+                    }
+                    match i64::from_str_radix(new_val, 10) {
+                        Ok(_) => Ok(()),
+                        Err(_) => Err("Bitte eine positive oder negative Ganzzahl eingeben"),
+                    }
+                })
+                .interact_text();
+            let neutrons_input: Result<String, Error> = Input::new()
+                .with_prompt("Neutronen")
+                .validate_with(|val: &String| {
+                    let new_val = val.trim();
+                    if new_val.is_empty() {
+                        return Err("Bitte etwas eingeben");
+                    }
+                    match i64::from_str_radix(new_val, 10) {
+                        Ok(_) => Ok(()),
+                        Err(_) => Err("Bitte eine positive oder negative Ganzzahl eingeben"),
+                    }
+                })
+                .interact_text();
+            let electrons_input: Result<String, Error> = Input::new()
+                .with_prompt("Elektronen")
+                .validate_with(|val: &String| {
+                    let new_val = val.trim();
+                    if new_val.is_empty() {
+                        return Err("Bitte etwas eingeben");
+                    }
+                    match i64::from_str_radix(new_val, 10) {
+                        Ok(_) => Ok(()),
+                        Err(_) => Err("Bitte eine positive oder negative Ganzzahl eingeben"),
+                    }
+                })
+                .interact_text();
+            stdout.clear_last_lines(3);
+
+            let protons = match i64::from_str_radix(&*protons_input.unwrap().trim(), 10) {
+                Ok(val) => val,
+                Err(_) => 0,
+            };
+
+            let neutrons = match i64::from_str_radix(&*neutrons_input.unwrap().trim(), 10) {
+                Ok(val) => val,
+                Err(_) => 0,
+            };
+
+            let electrons = match i64::from_str_radix(&*electrons_input.unwrap().trim(), 10) {
+                Ok(val) => val,
+                Err(_) => 0,
+            };
+
+            let mut state = State::from((electrons, protons, neutrons));
+            loop {
+                Term::stdout().write_line(&*format!("{}", state));
+                let selection = Select::new()
+                    .with_prompt("Operation")
+                    .items(&RADIO_OPTIONS)
+                    .default(0)
+                    .interact();
+                match selection {
+                    Ok(i) => {
+                        let operation = RADIO_OPTIONS[i].clone();
+                        if operation == "Alpha" {
+                            state = state.alpha()
+                        } else if operation == "Beta hin" {
+                            state = state.beta_hin_zerfall()
+                        } else if operation == "Beta Rück" {
+                            state = state.beta_rück_zerfall()
+                        } else if operation == "Beta Hin Minus" {
+                            state = state.beta_hin_minus_zerfall()
+                        } else if operation == "Beta Rück Plus" {
+                            state = state.beta_rück_plus_zerfall()
+                        } else if operation == "Gamma" {
+                            state = state.gamma()
+                        } else if operation == "Delta" {
+                            state = state.delta()
+                        } else if operation == "Aufhören" {
+                            break;
+                        }
+                    }
+                    Err(_) => break,
+                }
+            }
+            stdout.clear_last_lines(1);
         } else {
             dbgprint!("Seitenanzahl: ");
             let res = io::stdout().flush();
