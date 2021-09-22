@@ -503,6 +503,10 @@ dependencies = [
 [[package]]
 name = "zerfallsreihen"
 version = "1.0.0"
+dependencies = [
+ "serde",
+ "serde_yaml",
+]
 
 [[package]]
 name = "zeroize"

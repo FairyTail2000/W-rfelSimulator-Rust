@@ -1,3 +1,5 @@
+pub mod operation;
+
 use std::fmt::{Display, Formatter};
 
 #[cfg(test)]
@@ -25,104 +27,6 @@ mod tests {
             neutrons: 0,
         };
         assert_eq!(test_state.get_description(), "Nicht abgedeckt");
-    }
-
-    #[test]
-    fn test_alpha() {
-        let state = State {
-            electrons: 10,
-            protons: 1,
-            neutrons: 10,
-        };
-        let mutated = state.alpha();
-        assert_eq!(mutated.protons, 0);
-        assert_eq!(mutated.neutrons, 8);
-        assert_eq!(mutated.electrons, 10);
-        assert_eq!(mutated.get_description(), "Pflanze der 3. Generation Nr. 0");
-    }
-
-    #[test]
-    fn test_beta_hin_zerfall() {
-        let state = State {
-            electrons: 0,
-            protons: 0,
-            neutrons: 1,
-        };
-        let mutated = state.beta_hin_zerfall();
-        assert_eq!(mutated.protons, 1);
-        assert_eq!(mutated.neutrons, 0);
-        assert_eq!(mutated.electrons, 1);
-        assert_eq!(mutated.get_description(), "Monster Nr. 1");
-    }
-
-    #[test]
-    fn test_beta_rück_zerfall() {
-        let state = State {
-            electrons: 1,
-            protons: 1,
-            neutrons: 1,
-        };
-        let mutated = state.beta_rück_zerfall();
-        assert_eq!(mutated.protons, 0);
-        assert_eq!(mutated.neutrons, 2);
-        assert_eq!(mutated.electrons, 0);
-        assert_eq!(mutated.get_description(), "Pflanze der 2. Generation Nr. 0");
-    }
-
-    #[test]
-    fn test_beta_hin_minus_zerfall() {
-        let state = State {
-            electrons: 1,
-            protons: 1,
-            neutrons: 1,
-        };
-        let mutated = state.beta_hin_minus_zerfall();
-        assert_eq!(mutated.protons, 0);
-        assert_eq!(mutated.neutrons, 2);
-        assert_eq!(mutated.electrons, 2);
-        assert_eq!(mutated.get_description(), "Pflanze der 3. Generation Nr. 0");
-    }
-
-    #[test]
-    fn test_beta_rück_plus_zerfall() {
-        let state = State {
-            electrons: 1,
-            protons: 1,
-            neutrons: 1,
-        };
-        let mutated = state.beta_rück_plus_zerfall();
-        assert_eq!(mutated.protons, 2);
-        assert_eq!(mutated.neutrons, 0);
-        assert_eq!(mutated.electrons, 0);
-        assert_eq!(mutated.get_description(), "Nicht abgedeckt");
-    }
-
-    #[test]
-    fn test_gamma() {
-        let state = State {
-            electrons: 1,
-            protons: 1,
-            neutrons: 1,
-        };
-        let mutated = state.gamma();
-        assert_eq!(mutated.protons, 1);
-        assert_eq!(mutated.neutrons, 1);
-        assert_eq!(mutated.electrons, 0);
-        assert_eq!(mutated.get_description(), "Pflanze der 1. Generation Nr. 1");
-    }
-
-    #[test]
-    fn test_delta() {
-        let state = State {
-            electrons: 1,
-            protons: 1,
-            neutrons: 1,
-        };
-        let mutated = state.delta();
-        assert_eq!(mutated.protons, 0);
-        assert_eq!(mutated.neutrons, 1);
-        assert_eq!(mutated.electrons, 3);
-        assert_eq!(mutated.get_description(), "Pflanze der 3. Generation Nr. 0");
     }
 
     #[test]
@@ -344,69 +248,6 @@ impl State {
         } else {
             String::from("Nicht abgedeckt")
         }
-    }
-
-    pub fn alpha(&self) -> Self {
-        State {
-            electrons: self.electrons,
-            protons: self.protons - 2,
-            neutrons: self.neutrons - 2,
-        }
-        .validate()
-    }
-
-    pub fn beta_hin_zerfall(&self) -> Self {
-        State {
-            electrons: self.electrons + 1,
-            protons: self.protons + 1,
-            neutrons: self.neutrons - 1,
-        }
-        .validate()
-    }
-
-    pub fn beta_rück_zerfall(&self) -> Self {
-        State {
-            electrons: self.electrons - 1,
-            protons: self.protons - 1,
-            neutrons: self.neutrons + 1,
-        }
-        .validate()
-    }
-
-    pub fn beta_hin_minus_zerfall(&self) -> Self {
-        State {
-            electrons: self.electrons + 1,
-            protons: self.protons - 1,
-            neutrons: self.neutrons + 1,
-        }
-        .validate()
-    }
-
-    pub fn beta_rück_plus_zerfall(&self) -> Self {
-        State {
-            electrons: self.electrons - 1,
-            protons: self.protons + 1,
-            neutrons: self.neutrons - 1,
-        }
-        .validate()
-    }
-
-    pub fn gamma(&self) -> Self {
-        State {
-            electrons: self.electrons - 1,
-            protons: self.protons,
-            neutrons: self.neutrons,
-        }
-        .validate()
-    }
-
-    pub fn delta(&self) -> Self {
-        State {
-            electrons: self.electrons + 2,
-            protons: self.protons - 1,
-            neutrons: self.neutrons,
-        }
-        .validate()
     }
 
     fn validate(&self) -> Self {

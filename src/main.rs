@@ -13,23 +13,14 @@ use macros::{dbgprint, dbgprintln};
 use normal_dice::{Dice, Dices};
 use std::borrow::Borrow;
 use std::io;
-use std::io::{Error, Write};
+use std::io::{Error, Write, BufReader};
 use std::ops::Deref;
 use std::process::exit;
 #[cfg(debug_assertions)]
 use std::time::SystemTime;
 use zerfallsreihen::State;
-
-const RADIO_OPTIONS: &'static [&str] = &[
-    "Alpha",
-    "Beta hin",
-    "Beta Rück",
-    "Beta Hin Minus",
-    "Beta Rück Plus",
-    "Gamma",
-    "Delta",
-    "Aufhören",
-];
+use zerfallsreihen::operation::Operation;
+use std::fs::File;
 
 /**
 * Prints basic information's about the usage of the program
@@ -183,6 +174,24 @@ fn main() -> std::io::Result<()> {
     let no_tutorial = matches.is_present("no tutorial") || preferences.no_tutorial;
     let no_summary_message =
         matches.is_present("no summary message") || preferences.no_summary_message;
+
+    let operation = match File::open("zerfallsreihe.yaml") {
+        Ok(file) => {
+            match serde_yaml::from_reader(BufReader::new(file)) {
+                Ok(val) => {
+                    val
+                }
+                Err(e) => {
+                    eprintln!("{}", e);
+                    vec![Operation::default()]
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("{}", e);
+            vec![Operation::default()]
+        }
+    };
 
     #[cfg(debug_assertions)]
     let error_message = format!(
@@ -368,33 +377,22 @@ fn main() -> std::io::Result<()> {
             };
 
             let mut state = State::from((electrons, protons, neutrons));
+            let mut options: Vec<String> = operation.iter().map(|x| x.display.clone()).collect();
+            options.push(String::from("Aufhören"));
+            println!("{:#?}", operation);
             loop {
                 Term::stdout().write_line(&*format!("{}", state));
                 let selection = Select::new()
                     .with_prompt("Operation")
-                    .items(&RADIO_OPTIONS)
+                    .items(&options)
                     .default(0)
                     .interact();
                 match selection {
                     Ok(i) => {
-                        let operation = RADIO_OPTIONS[i].clone();
-                        if operation == "Alpha" {
-                            state = state.alpha()
-                        } else if operation == "Beta hin" {
-                            state = state.beta_hin_zerfall()
-                        } else if operation == "Beta Rück" {
-                            state = state.beta_rück_zerfall()
-                        } else if operation == "Beta Hin Minus" {
-                            state = state.beta_hin_minus_zerfall()
-                        } else if operation == "Beta Rück Plus" {
-                            state = state.beta_rück_plus_zerfall()
-                        } else if operation == "Gamma" {
-                            state = state.gamma()
-                        } else if operation == "Delta" {
-                            state = state.delta()
-                        } else if operation == "Aufhören" {
-                            break;
+                        if i >= operation.len() {
+                            break
                         }
+                        state = operation[i].apply(state);
                     }
                     Err(_) => break,
                 }
