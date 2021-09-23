@@ -35,9 +35,10 @@ jobs:
           command: build
           args: --target armv7-unknown-linux-gnueabihf --all-features
       - name: Rust Cargo Deb Package Build (armv7, Debian)
-        uses: ebbflow-io/cargo-deb-armv7-debian@1.47.0-1
-        with:
-          cmd: cargo deb --target=armv7-unknown-linux-gnueabihf
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+          cargo install cargo-deb
+          cargo deb --target=armv7-unknown-linux-gnueabihf
       - name: Copy binaries
         run: |
           mv target/armv7-unknown-linux-gnueabihf/release/würfeln ./
@@ -70,10 +71,11 @@ jobs:
           use-cross: true
           command: build
           args: --target x86_64-unknown-linux-gnu --all-features
-      - name: Rust Cargo Deb Package Build (armv7, Debian)
-        uses: ebbflow-io/cargo-deb-armv7-debian@1.47.0-1
-        with:
-          cmd: cargo deb --target=x86_64-unknown-linux-gnu
+      - name: Rust Cargo Deb Package Build (amd64, Debian)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+          cargo install cargo-deb
+          cargo deb --target=x86_64-unknown-linux-gnu
       - name: Copy binaries
         run: |
           mv target/x86_64-unknown-linux-gnu/release/würfeln ./
