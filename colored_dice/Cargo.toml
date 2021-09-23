@@ -11,3 +11,4 @@ serde = "1.0.130"
 serde_yaml = "0.8.21"
 macros = { version = "1.0.0", path = "../macros" }
 ansi_term = "0.12.1"
+common = { version = "1.0.0", path = "../common" }

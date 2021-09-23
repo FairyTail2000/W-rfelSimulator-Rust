@@ -10,17 +10,15 @@ use colored_dice::{ColoredDice, ColoredDices};
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
 use macros::{dbgprint, dbgprintln};
-use normal_dice::{Dice, Dices};
-use std::borrow::Borrow;
+use normal_dice::Dices;
 use std::io;
-use std::io::{Error, Write, BufReader};
+use std::io::{Error, Write};
 use std::ops::Deref;
 use std::process::exit;
 #[cfg(debug_assertions)]
 use std::time::SystemTime;
-use zerfallsreihen::State;
 use zerfallsreihen::operation::Operation;
-use std::fs::File;
+use zerfallsreihen::State;
 
 /**
 * Prints basic information's about the usage of the program
@@ -30,7 +28,7 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
     dbgprint!("Erlaubte Würfelseiten:");
     let mut vector: Vec<String> = vec![];
     for (index, site) in allowed_dice_sites.dices.iter().enumerate() {
-        vector.push((*format!(" {}", site.sides)).parse().unwrap());
+        vector.push((*format!(" {}", site)).parse().unwrap());
         if allowed_dice_sites.len() != index + 1 {
             vector.push((*format!(",")).parse().unwrap());
         }
@@ -87,9 +85,8 @@ fn handle_input(
             dbgprintln!("Es muss eine Ganzzahl sein, wie oben beschrieben");
             false
         } else if let Ok(sides) = parsed {
-            if allowed_dice_sites.dices.contains(&Dice { sides }) {
+            if allowed_dice_sites.dices.contains(&sides) {
                 let amount = ask_for_amount(error_message, "Anzahl");
-
                 let res = normal_dice::roll(amount, sides);
                 res.print_results(old_report_style, no_summary);
             } else {
@@ -120,37 +117,51 @@ fn ask_for_amount(error_message: &str, prompt: &str) -> u64 {
     };
 }
 
+fn validator(val: &String) -> Result<(), &'static str> {
+    let new_val = val.trim();
+    if new_val.is_empty() {
+        return Err("Bitte etwas eingeben");
+    }
+    match i64::from_str_radix(new_val, 10) {
+        Ok(_) => Ok(()),
+        Err(_) => Err("Bitte eine positive oder negative Ganzzahl eingeben"),
+    }
+}
+
+fn get_app<'a, 'b>() -> App<'a, 'b> {
+    App::new("Würfeln")
+        .version("1.0.0")
+        .author("Rafael Sundorf <developer.rafael.sundorf@gmail.com>")
+        .about("Hiermit kann man würfeln!")
+        .arg(Arg::with_name("old_style")
+            .short("o")
+            .long("old_style")
+            .help("Nutzt den alten style um das Ergebnis anzuzeigen")
+        )
+        .arg(Arg::with_name("no tutorial")
+            .short("n")
+            .long("no-tutorial")
+            .help("Unterdrückt die Start Nachricht")
+        )
+        .arg(Arg::with_name("no summary message")
+            .short("s")
+            .long("no-summary-message")
+            .help("Unterdrückt die kurze information nachdem das Würfelergebnis ausgegeben wurde")
+        )
+        .arg(Arg::with_name("no select dice select")
+            .short("d")
+            .long("no-select-dice-select")
+            .help("Verwendet die standart Eingabe anstatt einer Auswahl")
+        )
+        .arg(Arg::with_name("number instead")
+            .short("i")
+            .long("number-instead")
+            .help("Verwendet eine Zahlen eingabe anstatt einer Auswahl und Anzahl von farbigen würfeln")
+        )
+}
+
 fn main() -> std::io::Result<()> {
-    let matches = App::new("Würfeln")
-		.version("1.0.0")
-		.author("Rafael Sundorf <developer.rafael.sundorf@gmail.com>")
-		.about("Hiermit kann man würfeln!")
-		.arg(Arg::with_name("old_style")
-			.short("o")
-			.long("old_style")
-			.help("Nutzt den alten style um das Ergebnis anzuzeigen")
-		)
-		.arg(Arg::with_name("no tutorial")
-			.short("n")
-			.long("no-tutorial")
-			.help("Unterdrückt die Start Nachricht")
-		)
-		.arg(Arg::with_name("no summary message")
-			.short("s")
-			.long("no-summary-message")
-			.help("Unterdrückt die kurze information nachdem das Würfelergebnis ausgegeben wurde")
-		)
-		.arg(Arg::with_name("no select dice select")
-			.short("d")
-			.long("no-select-dice-select")
-			.help("Verwendet die standart Eingabe anstatt einer Auswahl")
-		)
-		.arg(Arg::with_name("number instead")
-			.short("i")
-			.long("number-instead")
-			.help("Verwendet eine Zahlen eingabe anstatt einer Auswahl und Anzahl von farbigen würfeln")
-		)
-		.get_matches();
+    let matches = get_app().get_matches();
 
     #[cfg(debug_assertions)]
     let start: SystemTime = SystemTime::now();
@@ -160,6 +171,7 @@ fn main() -> std::io::Result<()> {
     let preferences = Settings::load(None);
     let colored_dice = ColoredDices::load(None);
     let normal_dices = Dices::load(None);
+    let operation = Operation::load(None);
 
     #[cfg(debug_assertions)]
     dbgprintln!(
@@ -174,24 +186,6 @@ fn main() -> std::io::Result<()> {
     let no_tutorial = matches.is_present("no tutorial") || preferences.no_tutorial;
     let no_summary_message =
         matches.is_present("no summary message") || preferences.no_summary_message;
-
-    let operation = match File::open("zerfallsreihe.yaml") {
-        Ok(file) => {
-            match serde_yaml::from_reader(BufReader::new(file)) {
-                Ok(val) => {
-                    val
-                }
-                Err(e) => {
-                    eprintln!("{}", e);
-                    vec![Operation::default()]
-                }
-            }
-        }
-        Err(e) => {
-            eprintln!("{}", e);
-            vec![Operation::default()]
-        }
-    };
 
     #[cfg(debug_assertions)]
     let error_message = format!(
@@ -215,6 +209,10 @@ fn main() -> std::io::Result<()> {
         print_startup_information(&colored_dice, &normal_dices);
     }
 
+    let stdout = Term::stdout();
+    let stderr = Term::stderr();
+    let stdin = io::stdin();
+
     while !finished {
         let items = vec![
             "Farbiger Würfel",
@@ -226,7 +224,7 @@ fn main() -> std::io::Result<()> {
         let selection = Select::new()
             .items(&items)
             .default(1)
-            .interact_on_opt(&Term::stderr())?;
+            .interact_on_opt(&stderr)?;
 
         if selection == None {
             finished = true;
@@ -277,7 +275,7 @@ fn main() -> std::io::Result<()> {
                 let selection = MultiSelect::new()
 					.items(&possibilities)
 					.with_prompt("Wähle deine farbigen Würfel (Mit der Leertaste auswählen und Enter bestätigen)")
-					.interact_on(&Term::stderr())?;
+					.interact_on(&stderr)?;
                 if selection.len() == 0 {
                     dbgprintln!("Nichts gewählt.");
                     continue;
@@ -319,47 +317,19 @@ fn main() -> std::io::Result<()> {
         } else if answer == &"Verlassen" {
             finished = true;
         } else if answer == &"Zerfallsreihen" {
-            let stdout = Term::stdout();
             let protons_input: Result<String, Error> = Input::new()
                 .with_prompt("Protonen")
-                .validate_with(|val: &String| {
-                    let new_val = val.trim();
-                    if new_val.is_empty() {
-                        return Err("Bitte etwas eingeben");
-                    }
-                    match i64::from_str_radix(new_val, 10) {
-                        Ok(_) => Ok(()),
-                        Err(_) => Err("Bitte eine positive oder negative Ganzzahl eingeben"),
-                    }
-                })
+                .validate_with(validator)
                 .interact_text();
             let neutrons_input: Result<String, Error> = Input::new()
                 .with_prompt("Neutronen")
-                .validate_with(|val: &String| {
-                    let new_val = val.trim();
-                    if new_val.is_empty() {
-                        return Err("Bitte etwas eingeben");
-                    }
-                    match i64::from_str_radix(new_val, 10) {
-                        Ok(_) => Ok(()),
-                        Err(_) => Err("Bitte eine positive oder negative Ganzzahl eingeben"),
-                    }
-                })
+                .validate_with(validator)
                 .interact_text();
             let electrons_input: Result<String, Error> = Input::new()
                 .with_prompt("Elektronen")
-                .validate_with(|val: &String| {
-                    let new_val = val.trim();
-                    if new_val.is_empty() {
-                        return Err("Bitte etwas eingeben");
-                    }
-                    match i64::from_str_radix(new_val, 10) {
-                        Ok(_) => Ok(()),
-                        Err(_) => Err("Bitte eine positive oder negative Ganzzahl eingeben"),
-                    }
-                })
+                .validate_with(validator)
                 .interact_text();
-            stdout.clear_last_lines(3);
+            let _ = stdout.clear_last_lines(3);
 
             let protons = match i64::from_str_radix(&*protons_input.unwrap().trim(), 10) {
                 Ok(val) => val,
@@ -381,7 +351,7 @@ fn main() -> std::io::Result<()> {
             options.push(String::from("Aufhören"));
             println!("{:#?}", operation);
             loop {
-                Term::stdout().write_line(&*format!("{}", state));
+                let _ = Term::stdout().write_line(&*format!("{}", state));
                 let selection = Select::new()
                     .with_prompt("Operation")
                     .items(&options)
@@ -390,24 +360,23 @@ fn main() -> std::io::Result<()> {
                 match selection {
                     Ok(i) => {
                         if i >= operation.len() {
-                            break
+                            break;
                         }
                         state = operation[i].apply(state);
                     }
                     Err(_) => break,
                 }
             }
-            stdout.clear_last_lines(1);
+            let _ = stdout.clear_last_lines(1);
         } else {
             dbgprint!("Seitenanzahl: ");
-            let res = io::stdout().flush();
-            if let Err(_e) = res {
+            if stdout.flush().is_err() {
                 exit(-1)
             }
 
             if no_dice_select {
                 let mut input = String::new();
-                match io::stdin().read_line(&mut input) {
+                match stdin.read_line(&mut input) {
                     Ok(_n) => {
                         let removed = input.replace("\n", "");
                         // Return value determines continuation of the loop, true ends the loop, false continues it
@@ -425,7 +394,7 @@ fn main() -> std::io::Result<()> {
             } else {
                 let mut dice_items: Vec<String> = vec![];
                 for allowed_dice_site in normal_dices.dices.iter() {
-                    dice_items.push(allowed_dice_site.sides.to_string())
+                    dice_items.push(allowed_dice_site.to_string())
                 }
 
                 let selection = Select::new()
@@ -435,9 +404,10 @@ fn main() -> std::io::Result<()> {
                 if selection == None {
                     continue;
                 }
-
-                // Type annotation needed because generic borrow does not have runtime information at this point
-                let input: &str = dice_items.get(selection.unwrap()).unwrap().borrow();
+                let input: &str = match selection {
+                    None => continue,
+                    Some(sec) => &dice_items.get(sec).unwrap(),
+                };
 
                 finished = handle_input(
                     input.to_string(),

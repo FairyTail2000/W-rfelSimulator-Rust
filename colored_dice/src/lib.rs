@@ -1,4 +1,5 @@
 use ansi_term::Colour;
+use common::settings_path;
 use macros::dbgprintln;
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
@@ -29,7 +30,7 @@ impl Clone for ColoredDice {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ColoredDices {
     pub dices: Vec<ColoredDice>,
 }
@@ -42,9 +43,47 @@ impl Clone for ColoredDices {
     }
 }
 
+impl Default for ColoredDices {
+    fn default() -> Self {
+        return ColoredDices {
+            dices: vec![
+                ColoredDice {
+                    long: "Rosa".parse().unwrap(),
+                    short: "r".parse().unwrap(),
+                    sites: [0, 0, 0, 1, 1, 2],
+                    value: 1,
+                    color: "#FF8B8B".parse().unwrap(),
+                },
+                ColoredDice {
+                    long: "Grün".parse().unwrap(),
+                    short: "g".parse().unwrap(),
+                    sites: [0, 0, 1, 1, 2, 2],
+                    value: 2,
+                    color: "#22FF00".parse().unwrap(),
+                },
+                ColoredDice {
+                    long: "Weiß".parse().unwrap(),
+                    short: "w".parse().unwrap(),
+                    sites: [0, 1, 2, 2, 2, 3],
+                    value: 3,
+                    color: "#FFFFFF".parse().unwrap(),
+                },
+                ColoredDice {
+                    long: "Schwarz".parse().unwrap(),
+                    short: "s".parse().unwrap(),
+                    sites: [0, 1, 2, 2, 3, 4],
+                    value: 4,
+                    color: "#818181".parse().unwrap(),
+                },
+            ],
+        };
+    }
+}
+
 impl ColoredDices {
     pub fn load(file: Option<&str>) -> Self {
-        let file_name = file.unwrap_or(COLORED_DICES_FILE);
+        let alt = settings_path(COLORED_DICES_FILE);
+        let file_name = file.unwrap_or(alt.to_str().unwrap());
         let exists = Path::new(file_name).exists();
         if exists {
             let file = File::open(file_name).unwrap();
@@ -60,7 +99,7 @@ impl ColoredDices {
                         &ColoredDices::default(),
                     ) {
                         Ok(_) => {
-                            dbgprintln!("Neue Farbiger Würfel einstellungsdatei wurden erzeugt");
+                            dbgprintln!("Neue Farbiger Würfel wurden erzeugt");
                         }
                         Err(err) => {
                             dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));

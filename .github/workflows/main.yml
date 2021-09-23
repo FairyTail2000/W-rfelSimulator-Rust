@@ -34,18 +34,22 @@ jobs:
           use-cross: true
           command: build
           args: --target armv7-unknown-linux-gnueabihf --all-features
+      - name: Rust Cargo Deb Package Build (armv7, Debian)
+        uses: ebbflow-io/cargo-deb-armv7-debian@1.47.0-1
+        with:
+          cmd: cargo deb --target=armv7-unknown-linux-gnueabihf
       - name: Copy binaries
         run: |
           mv target/armv7-unknown-linux-gnueabihf/release/würfeln ./
           mv target/armv7-unknown-linux-gnueabihf/debug/würfeln ./debug-würfeln
-
+          mv target/armv7-unknown-linux-gnueabihf/debug/würfeln/debian/*.deb ./
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-armv7-unknown-linux-gnueabihf
           path: |
             würfeln
             debug-würfeln
-            *.yaml
+            *.deb
   build_linux_x86:
     name: Linux x86_64
     runs-on: ubuntu-latest
@@ -66,18 +70,22 @@ jobs:
           use-cross: true
           command: build
           args: --target x86_64-unknown-linux-gnu --all-features
+      - name: Rust Cargo Deb Package Build (armv7, Debian)
+        uses: ebbflow-io/cargo-deb-armv7-debian@1.47.0-1
+        with:
+          cmd: cargo deb --target=x86_64-unknown-linux-gnu
       - name: Copy binaries
         run: |
           mv target/x86_64-unknown-linux-gnu/release/würfeln ./
           mv target/x86_64-unknown-linux-gnu/debug/würfeln ./debug-würfeln
-
+          mv target/x86_64-unknown-linux-gnu/debian/*.deb ./
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-x86_64-unknown-linux-gnu
           path: |
             würfeln
             debug-würfeln
-             *.yaml
+            *.deb
   build_windows_x86:
     name: Windows
     runs-on: ubuntu-latest
@@ -108,7 +116,6 @@ jobs:
           path: |
             würfeln.exe
             würfeln-debug.exe
-            *.yaml
   build_android_aarch64:
     name: Android
     runs-on: ubuntu-latest
@@ -139,4 +146,3 @@ jobs:
           path: |
             würfeln
             würfeln-debug
-            *.yaml

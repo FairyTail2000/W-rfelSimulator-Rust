@@ -1,4 +1,5 @@
 use ansi_term::Colour;
+use common::settings_path;
 use macros::dbgprintln;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
@@ -18,7 +19,8 @@ pub struct Settings {
 
 impl Settings {
     pub fn load(file: Option<&str>) -> Self {
-        let file_name = file.unwrap_or(PREFERENCE_FILE);
+        let alt = settings_path(PREFERENCE_FILE);
+        let file_name = file.unwrap_or(alt.to_str().unwrap());
         #[cfg(debug_assertions)]
         dbgprintln!("Loading Settings from {}", file_name);
         let exists = Path::new(file_name).exists();

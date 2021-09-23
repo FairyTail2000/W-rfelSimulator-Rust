@@ -1,4 +1,5 @@
 use ansi_term::Colour;
+use common::settings_path;
 use macros::dbgprintln;
 use random_integer::random_u8;
 use serde::{Deserialize, Serialize};
@@ -104,21 +105,25 @@ pub fn roll(amount: u64, sides: u8) -> Results {
     results
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Dice {
-    pub sides: u8,
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct Dices {
+    pub dices: Vec<u8>,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Dices {
-    pub dices: Vec<Dice>,
+impl Default for Dices {
+    fn default() -> Self {
+        return Dices {
+            dices: vec![2, 3, 4, 6, 8, 10, 20, 100],
+        };
+    }
 }
 
 impl Dices {
     pub fn load(file: Option<&str>) -> Self {
-        let file_name = file.unwrap_or(NORMAL_DICES_FILE);
-        let exists = Path::new(file_name).exists();
-        if exists {
+        let alt = settings_path(NORMAL_DICES_FILE);
+        let file_name = file.unwrap_or(alt.to_str().unwrap());
+
+        if Path::new(file_name).exists() {
             let file = File::open(file_name).unwrap();
             let buf_reader = BufReader::new(file);
             serde_yaml::from_reader::<BufReader<File>, Dices>(buf_reader)
@@ -130,7 +135,7 @@ impl Dices {
                     match serde_yaml::to_writer::<BufWriter<File>, Dices>(writer, &Dices::default())
                     {
                         Ok(_) => {
-                            dbgprintln!("Neue Einstellungen wurden erzeugt");
+                            dbgprintln!("Neue Würfel wurden erzeugt");
                         }
                         Err(err) => {
                             dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
