@@ -38,6 +38,8 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           cargo install cargo-deb
+          cargo install cross
+          cross build --target armv7-unknown-linux-gnueabihf --all-features
           cargo deb --target=armv7-unknown-linux-gnueabihf
       - name: Copy binaries
         run: |
