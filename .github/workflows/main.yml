@@ -34,13 +34,6 @@ jobs:
           use-cross: true
           command: build
           args: --target armv7-unknown-linux-gnueabihf --all-features
-      - name: Rust Cargo Deb Package Build (armv7, Debian)
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          cargo install cargo-deb
-          cargo install cross
-          cross build --target armv7-unknown-linux-gnueabihf --all-features
-          cargo deb --target=armv7-unknown-linux-gnueabihf
       - name: Copy binaries
         run: |
           mv target/armv7-unknown-linux-gnueabihf/release/würfeln ./
@@ -52,7 +45,6 @@ jobs:
           path: |
             würfeln
             debug-würfeln
-            *.deb
   build_linux_x86:
     name: Linux x86_64
     runs-on: ubuntu-latest

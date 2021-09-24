@@ -8,13 +8,25 @@ use std::path::Path;
 
 const PREFERENCE_FILE: &str = "settings.yaml";
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Settings {
     pub(crate) old_style: bool,
     pub(crate) no_tutorial: bool,
     pub(crate) no_summary_message: bool,
     pub(crate) no_select_dice_select: bool,
     pub(crate) number_instead: bool,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Settings {
+            old_style: true,
+            no_tutorial: false,
+            no_summary_message: false,
+            no_select_dice_select: false,
+            number_instead: true
+        }
+    }
 }
 
 impl Settings {
