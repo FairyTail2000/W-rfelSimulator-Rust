@@ -5,7 +5,7 @@ then
   exit 1
 fi
 
-if [ "$1" = "remove" ] || [ "$1" = "purge" ]
+if [ "$1" = "purge" ]
 then
-  rm "$HOME/.local/share/würfeln/*"
+  rm -rf "$HOME/.local/share/würfeln"
 fi
