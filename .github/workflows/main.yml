@@ -38,7 +38,6 @@ jobs:
         run: |
           mv target/armv7-unknown-linux-gnueabihf/release/würfeln ./
           mv target/armv7-unknown-linux-gnueabihf/debug/würfeln ./debug-würfeln
-          mv target/armv7-unknown-linux-gnueabihf/debug/würfeln/debian/*.deb ./
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-armv7-unknown-linux-gnueabihf
