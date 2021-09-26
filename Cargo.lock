@@ -81,6 +81,7 @@ name = "common"
 version = "1.0.0"
 dependencies = [
  "directories",
+ "macros",
 ]
 
 [[package]]

@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 directories = "4.0.1"
+macros = { version = "1.0.0", path = "../macros" }
