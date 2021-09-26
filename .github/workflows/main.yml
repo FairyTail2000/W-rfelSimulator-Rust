@@ -40,9 +40,8 @@ jobs:
         name: Build deb
         with:
           use-cross: true
-          toolchain: armv7-unknown-linux-gnueabihf
           command: install
-          args: cargo-deb && cargo deb
+          args: cargo-deb && cargo --target armv7-unknown-linux-gnueabihf deb
       - name: Copy binaries
         run: |
           mv target/armv7-unknown-linux-gnueabihf/release/würfeln ./
