@@ -25,19 +25,29 @@ jobs:
           target: armv7-unknown-linux-gnueabihf
           override: true
       - uses: actions-rs/cargo@v1
+        name: Build Release
         with:
           use-cross: true
           command: build
           args: --target armv7-unknown-linux-gnueabihf --release --all-features
       - uses: actions-rs/cargo@v1
+        name: Build Debug
         with:
           use-cross: true
           command: build
           args: --target armv7-unknown-linux-gnueabihf --all-features
+      - uses: actions-rs/cargo@v1
+        name: Build deb
+        with:
+          use-cross: true
+          toolchain: armv7-unknown-linux-gnueabihf
+          command: install
+          args: cargo-deb && cargo deb
       - name: Copy binaries
         run: |
           mv target/armv7-unknown-linux-gnueabihf/release/würfeln ./
           mv target/armv7-unknown-linux-gnueabihf/debug/würfeln ./debug-würfeln
+          ls target/armv7-unknown-linux-gnueabihf/*
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-armv7-unknown-linux-gnueabihf
@@ -55,11 +65,13 @@ jobs:
           target: x86_64-unknown-linux-gnu
           override: true
       - uses: actions-rs/cargo@v1
+        name: Build Release
         with:
           use-cross: true
           command: build
           args: --target x86_64-unknown-linux-gnu --release --all-features
       - uses: actions-rs/cargo@v1
+        name: Build Debug
         with:
           use-cross: true
           command: build
@@ -92,11 +104,13 @@ jobs:
           target: x86_64-pc-windows-gnu
           override: true
       - uses: actions-rs/cargo@v1
+        name: Build Release
         with:
           use-cross: true
           command: build
           args: --target x86_64-pc-windows-gnu --release --all-features
       - uses: actions-rs/cargo@v1
+        name: Build Debug
         with:
           use-cross: true
           command: build
@@ -122,11 +136,13 @@ jobs:
           target: aarch64-linux-android
           override: true
       - uses: actions-rs/cargo@v1
+        name: Build Release
         with:
           use-cross: true
           command: build
           args: --target aarch64-linux-android --release --all-features
       - uses: actions-rs/cargo@v1
+        name: Build Debug
         with:
           use-cross: true
           command: build
