@@ -36,17 +36,10 @@ jobs:
           use-cross: true
           command: build
           args: --target armv7-unknown-linux-gnueabihf --all-features
-      - uses: actions-rs/cargo@v1
-        name: Build deb
-        with:
-          use-cross: true
-          command: install
-          args: cargo-deb && cargo --target armv7-unknown-linux-gnueabihf deb
       - name: Copy binaries
         run: |
           mv target/armv7-unknown-linux-gnueabihf/release/würfeln ./
           mv target/armv7-unknown-linux-gnueabihf/debug/würfeln ./debug-würfeln
-          ls target/armv7-unknown-linux-gnueabihf/*
       - uses: actions/upload-artifact@v2
         with:
           name: wuerfeln-armv7-unknown-linux-gnueabihf
