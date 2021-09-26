@@ -129,6 +129,61 @@ fn validator(val: &String) -> Result<(), &'static str> {
 	}
 }
 
+fn zerfallsreihe(stdout: &Term, operation: &Vec<Operation>) {
+	let protons_input: Result<String, Error> = Input::new()
+		.with_prompt("Protonen")
+		.validate_with(validator)
+		.interact_text();
+	let neutrons_input: Result<String, Error> = Input::new()
+		.with_prompt("Neutronen")
+		.validate_with(validator)
+		.interact_text();
+	let electrons_input: Result<String, Error> = Input::new()
+		.with_prompt("Elektronen")
+		.validate_with(validator)
+		.interact_text();
+	let _ = stdout.clear_last_lines(3);
+
+	let protons = match i64::from_str_radix(&*protons_input.unwrap().trim(), 10) {
+		Ok(val) => val,
+		Err(_) => 0,
+	};
+
+	let neutrons = match i64::from_str_radix(&*neutrons_input.unwrap().trim(), 10) {
+		Ok(val) => val,
+		Err(_) => 0,
+	};
+
+	let electrons = match i64::from_str_radix(&*electrons_input.unwrap().trim(), 10) {
+		Ok(val) => val,
+		Err(_) => 0,
+	};
+
+	let mut state = State::from((electrons, protons, neutrons));
+	let mut options: Vec<String> = operation.iter().map(|x| x.display.clone()).collect();
+	options.push(String::from("Aufhören"));
+	#[cfg(debug_assertions)]
+	dbgprintln!("{:?}", operation);
+	loop {
+		let _ = stdout.write_line(&*format!("{}", state));
+		let selection = Select::new()
+			.with_prompt("Operation")
+			.items(&options)
+			.default(0)
+			.interact();
+		match selection {
+			Ok(i) => {
+				if i >= operation.len() {
+					break;
+				}
+				state = operation[i].apply(state);
+			}
+			Err(_) => break,
+		}
+	}
+	let _ = stdout.clear_last_lines(1);
+}
+
 fn get_app<'a, 'b>() -> App<'a, 'b> {
 	App::new("Würfeln")
 		.version("1.0.0")
@@ -318,57 +373,7 @@ fn main() -> std::io::Result<()> {
 		} else if answer == &"Verlassen" {
 			finished = true;
 		} else if answer == &"Zerfallsreihen" {
-			let protons_input: Result<String, Error> = Input::new()
-				.with_prompt("Protonen")
-				.validate_with(validator)
-				.interact_text();
-			let neutrons_input: Result<String, Error> = Input::new()
-				.with_prompt("Neutronen")
-				.validate_with(validator)
-				.interact_text();
-			let electrons_input: Result<String, Error> = Input::new()
-				.with_prompt("Elektronen")
-				.validate_with(validator)
-				.interact_text();
-			let _ = stdout.clear_last_lines(3);
-
-			let protons = match i64::from_str_radix(&*protons_input.unwrap().trim(), 10) {
-				Ok(val) => val,
-				Err(_) => 0,
-			};
-
-			let neutrons = match i64::from_str_radix(&*neutrons_input.unwrap().trim(), 10) {
-				Ok(val) => val,
-				Err(_) => 0,
-			};
-
-			let electrons = match i64::from_str_radix(&*electrons_input.unwrap().trim(), 10) {
-				Ok(val) => val,
-				Err(_) => 0,
-			};
-
-			let mut state = State::from((electrons, protons, neutrons));
-			let mut options: Vec<String> = operation.iter().map(|x| x.display.clone()).collect();
-			options.push(String::from("Aufhören"));
-			println!("{:#?}", operation);
-			loop {
-				let _ = Term::stdout().write_line(&*format!("{}", state));
-				let selection = Select::new()
-					.with_prompt("Operation")
-					.items(&options)
-					.default(0)
-					.interact();
-				match selection {
-					Ok(i) => {
-						if i >= operation.len() {
-							break;
-						}
-						state = operation[i].apply(state);
-					}
-					Err(_) => break,
-				}
-			}
-			let _ = stdout.clear_last_lines(1);
+			zerfallsreihe(&stdout, &operation);
 		} else {
 			dbgprint!("Seitenanzahl: ");
 			if stdout.flush().is_err() {
