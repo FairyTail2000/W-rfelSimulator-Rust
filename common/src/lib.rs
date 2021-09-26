@@ -25,3 +25,7 @@ pub fn settings_path(file: &str) -> PathBuf {
         }
     }
 }
+
+pub trait Loadable {
+    fn load(file: Option<&str>) -> Self;
+}

@@ -1,6 +1,6 @@
 use crate::State;
 use ansi_term::Colour;
-use common::settings_path;
+use common::{settings_path, Loadable};
 use macros::dbgprintln;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -19,6 +19,41 @@ pub struct Operation {
 impl Display for Operation {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display)
+    }
+}
+
+impl Loadable for Operation {
+    fn load(file: Option<&str>) -> Vec<Self> {
+        let alt = settings_path("zerfallsreihe.yaml");
+        let file_name = file.unwrap_or(alt.to_str().unwrap());
+
+        if Path::new(file_name).exists() {
+            let file = File::open(file_name).unwrap();
+            let buf_reader = BufReader::new(file);
+            serde_yaml::from_reader::<BufReader<File>, Vec<Operation>>(buf_reader)
+                .unwrap_or(Operation::defaults())
+        } else {
+            match File::create(file_name) {
+                Ok(file) => {
+                    let writer = BufWriter::new(file);
+                    match serde_yaml::to_writer::<BufWriter<File>, Vec<Operation>>(
+                        writer,
+                        &Operation::defaults(),
+                    ) {
+                        Ok(_) => {
+                            dbgprintln!("Neue Zerfallsreihen wurden erzeugt");
+                        }
+                        Err(err) => {
+                            dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
+                        }
+                    }
+                }
+                Err(err) => {
+                    dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
+                }
+            }
+            Operation::defaults()
+        }
     }
 }
 
@@ -91,38 +126,5 @@ impl Operation {
             }
         }
         new_state.validate()
-    }
-
-    pub fn load(file: Option<&str>) -> Vec<Self> {
-        let alt = settings_path("zerfallsreihe.yaml");
-        let file_name = file.unwrap_or(alt.to_str().unwrap());
-
-        if Path::new(file_name).exists() {
-            let file = File::open(file_name).unwrap();
-            let buf_reader = BufReader::new(file);
-            serde_yaml::from_reader::<BufReader<File>, Vec<Operation>>(buf_reader)
-                .unwrap_or(Operation::defaults())
-        } else {
-            match File::create(file_name) {
-                Ok(file) => {
-                    let writer = BufWriter::new(file);
-                    match serde_yaml::to_writer::<BufWriter<File>, Vec<Operation>>(
-                        writer,
-                        &Operation::defaults(),
-                    ) {
-                        Ok(_) => {
-                            dbgprintln!("Neue Zerfallsreihen wurden erzeugt");
-                        }
-                        Err(err) => {
-                            dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
-                        }
-                    }
-                }
-                Err(err) => {
-                    dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
-                }
-            }
-            Operation::defaults()
-        }
     }
 }

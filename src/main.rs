@@ -7,6 +7,7 @@ use crate::preferences::Settings;
 use ansi_term::Colour;
 use clap::{App, Arg};
 use colored_dice::{ColoredDice, ColoredDices};
+use common::Loadable;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
 use macros::{dbgprint, dbgprintln};

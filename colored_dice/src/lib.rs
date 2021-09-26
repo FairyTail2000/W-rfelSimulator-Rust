@@ -1,5 +1,5 @@
 use ansi_term::Colour;
-use common::settings_path;
+use common::{settings_path, Loadable};
 use macros::dbgprintln;
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
@@ -80,8 +80,8 @@ impl Default for ColoredDices {
     }
 }
 
-impl ColoredDices {
-    pub fn load(file: Option<&str>) -> Self {
+impl Loadable for ColoredDices {
+    fn load(file: Option<&str>) -> Self {
         let alt = settings_path(COLORED_DICES_FILE);
         let file_name = file.unwrap_or(alt.to_str().unwrap());
         let exists = Path::new(file_name).exists();
@@ -113,7 +113,9 @@ impl ColoredDices {
             ColoredDices::default()
         }
     }
+}
 
+impl ColoredDices {
     pub fn len(&self) -> usize {
         self.dices.len()
     }
