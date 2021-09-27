@@ -18,6 +18,7 @@ use std::ops::Deref;
 use std::process::exit;
 #[cfg(debug_assertions)]
 use std::time::SystemTime;
+use zauber::Spells;
 use zerfallsreihen::operation::Operation;
 use zerfallsreihen::State;
 
@@ -216,6 +217,87 @@ fn get_app<'a, 'b>() -> App<'a, 'b> {
 		)
 }
 
+fn roll_colored_dice(
+	colored_dice: &ColoredDices,
+	error_message: &str,
+	number_instead: bool,
+	stderr: &Term,
+) -> io::Result<()> {
+	let mut possibilities: Vec<&str> = vec![];
+	if number_instead {
+		//Input a number and auto compute values
+		let amount = ask_for_amount(error_message, "Farbiger Würfel Wert");
+		//Tuple of value, amount and result
+		let mut dices: Vec<(u8, u64, u64, String)> = Vec::with_capacity(amount as usize);
+		let mut remaining = amount;
+
+		let mut copy: Vec<ColoredDice> = colored_dice.dices.to_vec();
+
+		copy.sort_by(|a, b| a.value.cmp(&b.value).reverse());
+		for dice in copy {
+			let mut result: u64 = 0;
+			for _ in 0..remaining / dice.value as u64 {
+				result += *dice.get_random() as u64;
+			}
+			let value = (dice.value, remaining / dice.value as u64, result, dice.long);
+			dices.push(value);
+			remaining %= dice.value as u64;
+		}
+
+		let mut accumulated_result: u64 = 0;
+		for result in dices {
+			dbgprintln!("{}: {}", result.3, result.2);
+			accumulated_result += result.2;
+		}
+
+		dbgprintln!(
+			"Insgesamt: {} ({})",
+			accumulated_result,
+			accumulated_result * 10
+		);
+	} else {
+		// Use multiselect...
+		for (_index, dice) in colored_dice.dices.iter().enumerate() {
+			possibilities.push(&*dice.long);
+		}
+
+		let selection = MultiSelect::new()
+			.items(&possibilities)
+			.with_prompt(
+				"Wähle deine farbigen Würfel (Mit der Leertaste auswählen und Enter bestätigen)",
+			)
+			.interact_on(stderr)?;
+		if selection.len() == 0 {
+			dbgprintln!("Nichts gewählt.");
+			return Ok(());
+		}
+
+		let mut result: Vec<(&String, u64)> = Vec::with_capacity(selection.len());
+		let mut accumulated_amount: u64 = 0;
+		for select in selection {
+			let sel = colored_dice.dices.get(select).unwrap();
+			let amount = ask_for_amount(error_message, &*format!("Anzahl {}", sel.long));
+			// Amount but shorter
+			let mut am: u64 = 0;
+			for _ in 0..amount {
+				am += *(sel.get_random()) as u64;
+			}
+			accumulated_amount += am;
+			result.push((&sel.long, am))
+		}
+
+		for res in result {
+			dbgprintln!("{}: {}", res.0, res.1);
+			dbgprintln!(
+				"Insgesamt: {} ({})",
+				accumulated_amount,
+				accumulated_amount * 10
+			);
+		}
+	}
+	Ok(())
+}
+
 fn main() -> std::io::Result<()> {
 	let matches = get_app().get_matches();
 
@@ -228,6 +310,7 @@ fn main() -> std::io::Result<()> {
 	let colored_dice = ColoredDices::load(None);
 	let normal_dices = Dices::load(None);
 	let operation = Operation::load(None);
+	let spells = Spells::load(None);
 
 	#[cfg(debug_assertions)]
 	dbgprintln!(
@@ -259,6 +342,10 @@ fn main() -> std::io::Result<()> {
 	dbgprintln!("{:?}", colored_dice);
 	#[cfg(debug_assertions)]
 	dbgprintln!("{:?}", normal_dices);
+	#[cfg(debug_assertions)]
+	dbgprintln!("{:?}", operation);
+	#[cfg(debug_assertions)]
+	dbgprintln!("{:?}", spells);
 
 	let mut finished = false;
 	if !no_tutorial {
@@ -268,19 +355,17 @@ fn main() -> std::io::Result<()> {
 	let stdout = Term::stdout();
 	let stderr = Term::stderr();
 	let stdin = io::stdin();
+	let items = vec![
+		"Farbiger Würfel",
+		"Normaler Würfel",
+		"Zerfallsreihen",
+		"Random Zauber",
+		"Hilfe",
+		"Verlassen",
+	];
 
 	while !finished {
-		let items = vec![
-			"Farbiger Würfel",
-			"Normaler Würfel",
-			"Zerfallsreihen",
-			"Hilfe",
-			"Verlassen",
-		];
-		let selection = Select::new()
-			.items(&items)
-			.default(1)
-			.interact_on_opt(&stderr)?;
+		let selection = Select::new().items(&items).default(1).interact_opt()?;
 
 		if selection == None {
 			finished = true;
@@ -290,75 +375,16 @@ fn main() -> std::io::Result<()> {
 		let answer = items.get(selection.unwrap()).unwrap();
 
 		if answer == &"Farbiger Würfel" {
-			let mut possibilities: Vec<&str> = vec![];
-			if number_instead {
-				//Input a number and auto compute values
-				let amount = ask_for_amount(error_message.as_str(), "Farbiger Würfel Wert");
-				//Tuple of value, amount and result
-				let mut dices: Vec<(u8, u64, u64, String)> = Vec::with_capacity(amount as usize);
-				let mut remaining = amount;
-
-				let mut copy: Vec<ColoredDice> = colored_dice.dices.to_vec();
-
-				copy.sort_by(|a, b| a.value.cmp(&b.value).reverse());
-				for dice in copy {
-					let mut result: u64 = 0;
-					for _ in 0..remaining / dice.value as u64 {
-						result += *dice.get_random() as u64;
-					}
-					let value = (dice.value, remaining / dice.value as u64, result, dice.long);
-					dices.push(value);
-					remaining %= dice.value as u64;
-				}
-
-				let mut accumulated_result: u64 = 0;
-				for result in dices {
-					dbgprintln!("{}: {}", result.3, result.2);
-					accumulated_result += result.2;
-				}
-
-				dbgprintln!(
-					"Insgesamt: {} ({})",
-					accumulated_result,
-					accumulated_result * 10
-				);
-			} else {
-				// Use multiselect...
-				for (_index, dice) in colored_dice.dices.iter().enumerate() {
-					possibilities.push(&*dice.long);
-				}
-
-				let selection = MultiSelect::new()
-					.items(&possibilities)
-					.with_prompt("Wähle deine farbigen Würfel (Mit der Leertaste auswählen und Enter bestätigen)")
-					.interact_on(&stderr)?;
-				if selection.len() == 0 {
-					dbgprintln!("Nichts gewählt.");
-					continue;
-				}
-
-				let mut result: Vec<(&String, u64)> = Vec::with_capacity(selection.len());
-				let mut accumulated_amount: u64 = 0;
-				for select in selection {
-					let sel = colored_dice.dices.get(select).unwrap();
-					let amount =
-						ask_for_amount(error_message.as_str(), &*format!("Anzahl {}", sel.long));
-					// Amount but shorter
-					let mut am: u64 = 0;
-					for _ in 0..amount {
-						am += *(sel.get_random()) as u64;
-					}
-					accumulated_amount += am;
-					result.push((&sel.long, am))
-				}
-
-				for res in result {
-					dbgprintln!("{}: {}", res.0, res.1);
-					dbgprintln!(
-						"Insgesamt: {} ({})",
-						accumulated_amount,
-						accumulated_amount * 10
-					);
+			match roll_colored_dice(
+				&colored_dice,
+				error_message.as_str(),
+				number_instead,
+				&stderr,
+			) {
+				Ok(_) => {}
+				Err(err) => {
+					eprintln!("{}", err);
+					exit(-1);
 				}
 			}
 		} else if answer == &"Hilfe" {
@@ -374,6 +400,22 @@ fn main() -> std::io::Result<()> {
 			finished = true;
 		} else if answer == &"Zerfallsreihen" {
 			zerfallsreihe(&stdout, &operation);
+		} else if answer == &"Random Zauber" {
+			let string: String = "Kampfzauber".parse().unwrap();
+			let items: Vec<String> = spells.iter().map(|x| x.name.clone()).collect();
+			let default = match items.iter().position(|x| x.clone() == string) {
+				None => 0,
+				Some(index) => index,
+			};
+
+			match Select::new()
+				.items(&items)
+				.default(default)
+				.interact_opt()?
+			{
+				None => continue,
+				Some(index) => dbgprintln!("{}", spells[index].get_random()),
+			}
 		} else {
 			dbgprint!("Seitenanzahl: ");
 			if stdout.flush().is_err() {
