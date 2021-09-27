@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "dices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "long": {
+            "type": "string",
+            "minLength": 2
+          },
+          "short": {
+            "type": "string",
+            "maxLength": 1
+          },
+          "sites": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 2
+          },
+          "value": {
+            "type": "integer"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "#([A-Fa-f\\d]{3}|[A-Fa-f\\d]{6})$"
+          }
+        },
+        "required": [
+          "long",
+          "short",
+          "sites",
+          "value",
+          "color"
+        ]
+      }
+    }
+  }
+}

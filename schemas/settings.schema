@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "old_style": {
+      "type": "boolean",
+      "default": true
+    },
+    "no_tutorial": {
+      "type": "boolean",
+      "default": false
+    },
+    "no_summary_message": {
+      "type": "boolean",
+      "default": false
+    },
+    "no_select_dice_select": {
+      "type": "boolean",
+      "default": false
+    },
+    "number_instead": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

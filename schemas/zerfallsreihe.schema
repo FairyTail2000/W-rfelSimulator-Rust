@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "display": {
+        "type": "string"
+      },
+      "electrons": {
+        "type": "number"
+      },
+      "protons": {
+        "type": "number"
+      },
+      "neutrons": {
+        "type": "number"
+      }
+    },
+    "required": ["display"]
+  }
+}
