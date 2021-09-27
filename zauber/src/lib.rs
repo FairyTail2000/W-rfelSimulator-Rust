@@ -102,7 +102,7 @@ impl Spells {
 	}
 
 	pub fn get_random(&self) -> String {
-		self.spells[random_usize(0, self.spells.len())].clone()
+		self.spells[random_usize(0, self.spells.len() - 1)].clone()
 	}
 }
 
