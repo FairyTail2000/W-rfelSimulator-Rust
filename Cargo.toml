@@ -21,6 +21,7 @@ macros = { version = "1.0.0", path = "./macros" }
 zerfallsreihen = { version = "1.0.0", path = "./zerfallsreihen" }
 common = { version = "1.0.0", path = "./common" }
 zauber = { version = "1.0.0", path = "./zauber" }
+nachteil = { version = "1.0.0", path = "./nachteil"}
 
 [package.metadata.deb]
 copyright = "No Copyright"

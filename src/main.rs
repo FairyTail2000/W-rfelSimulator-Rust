@@ -11,6 +11,7 @@ use common::Loadable;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
 use macros::{dbgprint, dbgprintln};
+use nachteil::Disadvantage;
 use normal_dice::Dices;
 use std::io;
 use std::io::{Error, Write};
@@ -311,6 +312,7 @@ fn main() -> std::io::Result<()> {
 	let normal_dices = Dices::load(None);
 	let operation = Operation::load(None);
 	let spells = Spells::load(None);
+	let disadvanteges: Vec<Disadvantage> = Disadvantage::load(None);
 
 	#[cfg(debug_assertions)]
 	dbgprintln!(
@@ -360,6 +362,7 @@ fn main() -> std::io::Result<()> {
 		"Normaler Würfel",
 		"Zerfallsreihen",
 		"Random Zauber",
+		"Random Nachteil",
 		"Hilfe",
 		"Verlassen",
 	];
@@ -416,6 +419,9 @@ fn main() -> std::io::Result<()> {
 				None => continue,
 				Some(index) => dbgprintln!("{}", spells[index].get_random()),
 			}
+		} else if answer == &"Random Nachteil" {
+			let rando = nachteil::get_random(&disadvanteges);
+			dbgprintln!("{}", rando);
 		} else {
 			dbgprint!("Seitenanzahl: ");
 			if stdout.flush().is_err() {
