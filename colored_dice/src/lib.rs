@@ -71,7 +71,7 @@ impl Default for ColoredDices {
 				ColoredDice {
 					long: "Schwarz".parse().unwrap(),
 					short: "s".parse().unwrap(),
-					sites: [0, 1, 2, 2, 3, 4],
+					sites: [0, 1, 3, 3, 3, 4],
 					value: 4,
 					color: "#818181".parse().unwrap(),
 				},

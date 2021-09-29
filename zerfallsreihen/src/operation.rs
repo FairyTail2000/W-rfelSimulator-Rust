@@ -125,6 +125,6 @@ impl Operation {
 				new_state.neutrons += val;
 			}
 		}
-		new_state.validate()
+		new_state
 	}
 }

@@ -167,7 +167,6 @@ fn zerfallsreihe(stdout: &Term, operation: &Vec<Operation>) {
 	#[cfg(debug_assertions)]
 	dbgprintln!("{:?}", operation);
 	loop {
-		let _ = stdout.write_line(&*format!("{}", state));
 		let selection = Select::new()
 			.with_prompt("Operation")
 			.items(&options)
@@ -178,7 +177,13 @@ fn zerfallsreihe(stdout: &Term, operation: &Vec<Operation>) {
 				if i >= operation.len() {
 					break;
 				}
-				state = operation[i].apply(state);
+				let new = operation[i].apply(state);
+				if new.protons < 0 || new.electrons < 0 || new.neutrons < 0 {
+					dbgprintln!("Nicht möglich!");
+				} else {
+					state = new;
+					dbgprintln!("{}", state);
+				}
 			}
 			Err(_) => break,
 		}

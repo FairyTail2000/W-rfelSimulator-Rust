@@ -33,8 +33,6 @@ impl Loadable<Self> for Settings {
 	fn load(file: Option<&str>) -> Self {
 		let alt = settings_path(PREFERENCE_FILE);
 		let file_name = file.unwrap_or(alt.to_str().unwrap());
-		#[cfg(debug_assertions)]
-		dbgprintln!("Loading Settings from {}", file_name);
 		let exists = Path::new(file_name).exists();
 		if exists {
 			let file = File::open(file_name).unwrap();
