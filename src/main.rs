@@ -11,7 +11,7 @@ use common::Loadable;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
 use macros::{dbgprint, dbgprintln};
-use nachteil::Disadvantage;
+use nachteil::{Advantage, Disadvantage};
 use normal_dice::Dices;
 use std::io;
 use std::io::{Error, Write};
@@ -317,7 +317,8 @@ fn main() -> std::io::Result<()> {
 	let normal_dices = Dices::load(None);
 	let operation = Operation::load(None);
 	let spells = Spells::load(None);
-	let disadvanteges: Vec<Disadvantage> = Disadvantage::load(None);
+	let disadvantages: Vec<Disadvantage> = Disadvantage::load(None);
+	let advantages: Vec<Advantage> = Advantage::load(None);
 
 	#[cfg(debug_assertions)]
 	dbgprintln!(
@@ -344,15 +345,19 @@ fn main() -> std::io::Result<()> {
 	let error_message = format!("Nur Zahlen sind erlaubt! Maximal {}", u64::MAX);
 
 	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}", preferences);
+	dbgprintln!("{:?}\n", preferences);
 	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}", colored_dice);
+	dbgprintln!("{:?}\n", colored_dice);
 	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}", normal_dices);
+	dbgprintln!("{:?}\n", normal_dices);
 	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}", operation);
+	dbgprintln!("{:?}\n", operation);
 	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}", spells);
+	dbgprintln!("{:?}\n", spells);
+	#[cfg(debug_assertions)]
+	dbgprintln!("{:?}\n", disadvantages);
+	#[cfg(debug_assertions)]
+	dbgprintln!("{:?}\n", advantages);
 
 	let mut finished = false;
 	if !no_tutorial {
@@ -367,6 +372,7 @@ fn main() -> std::io::Result<()> {
 		"Normaler Würfel",
 		"Zerfallsreihen",
 		"Random Zauber",
+		"Random Vorteil",
 		"Random Nachteil",
 		"Hilfe",
 		"Verlassen",
@@ -425,7 +431,10 @@ fn main() -> std::io::Result<()> {
 				Some(index) => dbgprintln!("{}", spells[index].get_random()),
 			}
 		} else if answer == &"Random Nachteil" {
-			let rando = nachteil::get_random(&disadvanteges);
+			let rando = nachteil::get_random(&disadvantages);
+			dbgprintln!("{}", rando);
+		} else if answer == &"Random Vorteil" {
+			let rando = nachteil::get_random(&advantages);
 			dbgprintln!("{}", rando);
 		} else {
 			dbgprint!("Seitenanzahl: ");
