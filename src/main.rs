@@ -8,6 +8,7 @@ use ansi_term::Colour;
 use clap::{App, Arg};
 use colored_dice::{ColoredDice, ColoredDices};
 use common::Loadable;
+use crit_dice::CritDices;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
 use macros::{dbgprint, dbgprintln};
@@ -22,7 +23,6 @@ use std::time::SystemTime;
 use zauber::Spells;
 use zerfallsreihen::operation::Operation;
 use zerfallsreihen::State;
-
 /**
  * Prints basic information's about the usage of the program
  * Also used for help message
@@ -319,6 +319,7 @@ fn main() -> std::io::Result<()> {
 	let spells = Spells::load(None);
 	let disadvantages: Vec<Disadvantage> = Disadvantage::load(None);
 	let advantages: Vec<Advantage> = Advantage::load(None);
+	let crits = CritDices::load(None);
 
 	#[cfg(debug_assertions)]
 	dbgprintln!(
@@ -370,6 +371,7 @@ fn main() -> std::io::Result<()> {
 	let items = vec![
 		"Farbiger Würfel",
 		"Normaler Würfel",
+		"Crit",
 		"Zerfallsreihen",
 		"Random Zauber",
 		"Random Vorteil",
@@ -386,9 +388,9 @@ fn main() -> std::io::Result<()> {
 			continue;
 		}
 
-		let answer = items.get(selection.unwrap()).unwrap();
+		let answer = items.get(selection.unwrap()).unwrap().clone();
 
-		if answer == &"Farbiger Würfel" {
+		if answer == "Farbiger Würfel" {
 			match roll_colored_dice(
 				&colored_dice,
 				error_message.as_str(),
@@ -401,7 +403,7 @@ fn main() -> std::io::Result<()> {
 					exit(-1);
 				}
 			}
-		} else if answer == &"Hilfe" {
+		} else if answer == "Hilfe" {
 			finished = handle_input(
 				"h".parse().unwrap(),
 				old,
@@ -410,11 +412,40 @@ fn main() -> std::io::Result<()> {
 				error_message.as_str(),
 				no_summary_message,
 			);
-		} else if answer == &"Verlassen" {
+		} else if answer == "Crit" {
+			let input: String = Input::new()
+				.with_prompt("Anzahl")
+				.validate_with(|input: &String| -> Result<(), &str> {
+					let new_val = input.trim();
+					if new_val.is_empty() {
+						return Err("Bitte etwas eingeben");
+					}
+					match i16::from_str_radix(new_val, 10) {
+						Ok(val) => {
+							if val < 0 {
+								Err("Bitte eine positive Ganzzahl eingeben")
+							} else {
+								Ok(())
+							}
+						}
+						Err(_) => Err("Bitte eine positive Ganzzahl eingeben"),
+					}
+				})
+				.interact_text()
+				.unwrap();
+			let count = match i16::from_str_radix(&*input, 10) {
+				Ok(c) => c,
+				Err(e) => {
+					eprintln!("{}", e);
+					continue;
+				}
+			};
+			crits.roll(count);
+		} else if answer == "Verlassen" {
 			finished = true;
-		} else if answer == &"Zerfallsreihen" {
+		} else if answer == "Zerfallsreihen" {
 			zerfallsreihe(&stdout, &operation);
-		} else if answer == &"Random Zauber" {
+		} else if answer == "Random Zauber" {
 			let string: String = "Kampfzauber".parse().unwrap();
 			let items: Vec<String> = spells.iter().map(|x| x.name.clone()).collect();
 			let default = match items.iter().position(|x| x.clone() == string) {
@@ -430,10 +461,10 @@ fn main() -> std::io::Result<()> {
 				None => continue,
 				Some(index) => dbgprintln!("{}", spells[index].get_random()),
 			}
-		} else if answer == &"Random Nachteil" {
+		} else if answer == "Random Nachteil" {
 			let rando = nachteil::get_random(&disadvantages);
 			dbgprintln!("{}", rando);
-		} else if answer == &"Random Vorteil" {
+		} else if answer == "Random Vorteil" {
 			let rando = nachteil::get_random(&advantages);
 			dbgprintln!("{}", rando);
 		} else {

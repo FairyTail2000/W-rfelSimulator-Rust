@@ -22,6 +22,7 @@ zerfallsreihen = { version = "1.0.0", path = "./zerfallsreihen" }
 common = { version = "1.0.0", path = "./common" }
 zauber = { version = "1.0.0", path = "./zauber" }
 nachteil = { version = "1.0.0", path = "./nachteil"}
+crit_dice = { version = "1.0.0", path = "./crit_dice" }
 
 [package.metadata.deb]
 copyright = "No Copyright"
