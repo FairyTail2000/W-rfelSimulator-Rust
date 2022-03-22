@@ -1,6 +1,6 @@
 [package]
 name = "würfeln"
-version = "1.0.0"
+version = "1.2.0"
 authors = ["Rafael Sundorf <captn.rafaelh@gmail.com>"]
 edition = "2021"
 description = "The Dice Simulator for the Goren PnP"
