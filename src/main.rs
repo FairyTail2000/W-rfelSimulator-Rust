@@ -7,7 +7,7 @@ use crate::preferences::Settings;
 use ansi_term::Colour;
 use clap::{App, Arg};
 use colored_dice::{ColoredDice, ColoredDices};
-use common::Loadable;
+use common::{Loadable, Rollable};
 use crit_dice::CritDices;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
@@ -214,7 +214,7 @@ fn get_app<'a, 'b>() -> App<'a, 'b> {
 		.arg(Arg::with_name("no select dice select")
 			.short("d")
 			.long("no-select-dice-select")
-			.help("Verwendet die standart Eingabe anstatt einer Auswahl")
+			.help("Verwendet die standard Eingabe anstatt einer Auswahl")
 		)
 		.arg(Arg::with_name("number instead")
 			.short("i")
@@ -242,12 +242,12 @@ fn roll_colored_dice(
 		copy.sort_by(|a, b| a.value.cmp(&b.value).reverse());
 		for dice in copy {
 			let mut result: u64 = 0;
-			for _ in 0..remaining / dice.value as u64 {
-				result += *dice.get_random() as u64;
+			for _ in 0..remaining / dice.value as usize {
+				result += *dice.roll() as u64;
 			}
-			let value = (dice.value, remaining / dice.value as u64, result, dice.long);
+			let value = (dice.value, remaining / dice.value as usize, result, dice.long);
 			dices.push(value);
-			remaining %= dice.value as u64;
+			remaining %= dice.value as usize;
 		}
 
 		let mut accumulated_result: u64 = 0;
@@ -286,7 +286,7 @@ fn roll_colored_dice(
 			// Amount but shorter
 			let mut am: u64 = 0;
 			for _ in 0..amount {
-				am += *(sel.get_random()) as u64;
+				am += *(sel.roll()) as u64;
 			}
 			accumulated_amount += am;
 			result.push((&sel.long, am))
@@ -459,7 +459,7 @@ fn main() -> std::io::Result<()> {
 				.interact_opt()?
 			{
 				None => continue,
-				Some(index) => dbgprintln!("{}", spells[index].get_random()),
+				Some(index) => dbgprintln!("{}", spells[index].roll()),
 			}
 		} else if answer == "Random Nachteil" {
 			let rando = nachteil::get_random(&disadvantages);

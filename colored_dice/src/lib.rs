@@ -115,7 +115,7 @@ impl Loadable<Self> for ColoredDices {
 	}
 }
 
-impl Rollable<&u8> for ColoredDice {
+impl Rollable<u8> for ColoredDice {
     fn roll(&self) -> &u8 {
         self.sites
             .get(random_usize(1, self.sites.len() - 1))

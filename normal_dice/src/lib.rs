@@ -1,5 +1,5 @@
 use ansi_term::Colour;
-use common::{settings_path, Loadable, Rollable};
+use common::{settings_path, Loadable};
 use macros::dbgprintln;
 use random_integer::random_u8;
 use serde::{Deserialize, Serialize};

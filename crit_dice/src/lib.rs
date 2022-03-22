@@ -90,8 +90,8 @@ impl Level {
 }
 
 impl Rollable<u8> for CritDice {
-    fn roll(&self) -> u8 {
-        self.values[random_usize(0, self.values.len() - 1)]
+    fn roll(&self) -> &u8 {
+        &self.values[random_usize(0, self.values.len() - 1)]
     }
 }
 
@@ -147,7 +147,7 @@ impl CritDices {
 				}
 			}
 		}
-		let mut results: Vec<u8> = stack.iter_mut().map(|x| x.roll()).collect();
+		let mut results: Vec<u8> = stack.iter_mut().map(|x| *x.roll()).collect();
 		let mut s_counter: u8 = 0;
 		let counter: u8 = results
 			.iter_mut()

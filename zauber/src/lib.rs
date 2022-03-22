@@ -1,4 +1,4 @@
-use common::{settings_path, Loadable};
+use common::{settings_path, Loadable, Rollable};
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
@@ -100,10 +100,6 @@ impl Spells {
 			},
 		];
 	}
-
-	pub fn get_random(&self) -> String {
-		self.spells[random_usize(0, self.spells.len() - 1)].clone()
-	}
 }
 
 impl Loadable<Vec<Spells>> for Spells {
@@ -137,4 +133,10 @@ impl Loadable<Vec<Spells>> for Spells {
 			Spells::defaults()
 		}
 	}
+}
+
+impl Rollable<String> for Spells  {
+    fn roll(&self) -> &String {
+        &self.spells[random_usize(0, self.spells.len() - 1)]
+    }
 }
