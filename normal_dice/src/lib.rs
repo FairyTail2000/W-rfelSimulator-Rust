@@ -1,5 +1,5 @@
 use ansi_term::Colour;
-use common::{settings_path, Loadable};
+use common::{settings_path, Loadable, Rollable};
 use macros::dbgprintln;
 use random_integer::random_u8;
 use serde::{Deserialize, Serialize};
@@ -93,11 +93,11 @@ impl Results {
 	}
 }
 
-pub fn roll(amount: u64, sides: u8) -> Results {
+pub fn roll(amount: usize, sides: u8) -> Results {
 	let mut results = Results {
-		data: Vec::with_capacity(amount as usize),
+		data: Vec::with_capacity(amount),
 		sides,
-		count: amount,
+		count: amount as u64,
 	};
 	for _ in 0..amount {
 		results.data.push(random_u8(1, sides))

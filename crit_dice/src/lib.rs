@@ -1,4 +1,4 @@
-use common::{settings_path, Loadable};
+use common::{settings_path, Loadable, Rollable};
 use macros::dbgprintln;
 use random_integer::random_usize;
 use random_number::random;
@@ -89,10 +89,10 @@ impl Level {
 	}
 }
 
-impl CritDice {
-	fn roll(&self) -> u8 {
-		self.values[random_usize(0, self.values.len() - 1)]
-	}
+impl Rollable<u8> for CritDice {
+    fn roll(&self) -> u8 {
+        self.values[random_usize(0, self.values.len() - 1)]
+    }
 }
 
 impl Loadable<CritDices> for CritDices {

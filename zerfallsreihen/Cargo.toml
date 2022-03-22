@@ -2,7 +2,7 @@
 name = "zerfallsreihen"
 authors = ["Rafael Sundorf"]
 version = "1.0.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 serde = { version = "1.0.130", features = ["derive"] }

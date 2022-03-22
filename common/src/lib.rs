@@ -34,3 +34,7 @@ pub fn settings_path(file: &str) -> PathBuf {
 pub trait Loadable<T> {
 	fn load(file: Option<&str>) -> T;
 }
+
+pub trait Rollable<T> {
+    fn roll(&self) -> &T;
+}

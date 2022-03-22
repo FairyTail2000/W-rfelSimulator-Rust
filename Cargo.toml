@@ -2,7 +2,7 @@
 name = "würfeln"
 version = "1.0.0"
 authors = ["Rafael Sundorf <captn.rafaelh@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "The Dice Simulator for the Goren PnP"
 license = "GPL3"
 
@@ -32,3 +32,7 @@ section = "misc"
 extended-description = "The Dice Simulator for the Goren PnP"
 license-file = "LICENSE"
 name = "wuerfeln"
+
+[profile.release]
+strip = "symbols"
+lto = true

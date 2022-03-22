@@ -102,7 +102,7 @@ fn handle_input(
 	}
 }
 
-fn ask_for_amount(error_message: &str, prompt: &str) -> u64 {
+fn ask_for_amount(error_message: &str, prompt: &str) -> usize {
 	let input: Result<String, Error> = Input::new()
 		.with_prompt(prompt)
 		.validate_with(|input: &String| -> Result<(), &str> {
@@ -234,7 +234,7 @@ fn roll_colored_dice(
 		//Input a number and auto compute values
 		let amount = ask_for_amount(error_message, "Farbiger Würfel Wert");
 		//Tuple of value, amount and result
-		let mut dices: Vec<(u8, u64, u64, String)> = Vec::with_capacity(amount as usize);
+		let mut dices: Vec<(u8, usize, u64, String)> = Vec::with_capacity(amount as usize);
 		let mut remaining = amount;
 
 		let mut copy: Vec<ColoredDice> = colored_dice.dices.to_vec();

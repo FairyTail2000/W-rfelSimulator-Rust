@@ -1,5 +1,5 @@
 use ansi_term::Colour;
-use common::{settings_path, Loadable};
+use common::{settings_path, Loadable, Rollable};
 use macros::dbgprintln;
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
@@ -115,16 +115,16 @@ impl Loadable<Self> for ColoredDices {
 	}
 }
 
+impl Rollable<&u8> for ColoredDice {
+    fn roll(&self) -> &u8 {
+        self.sites
+            .get(random_usize(1, self.sites.len() - 1))
+            .unwrap()
+    }
+}
+
 impl ColoredDices {
 	pub fn len(&self) -> usize {
 		self.dices.len()
-	}
-}
-
-impl ColoredDice {
-	pub fn get_random(&self) -> &u8 {
-		self.sites
-			.get(random_usize(1, self.sites.len() - 1))
-			.unwrap()
 	}
 }
