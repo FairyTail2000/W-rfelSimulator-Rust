@@ -65,7 +65,8 @@ jobs:
       - name: Rust Cargo Deb Package Build (amd64, Debian)
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          cargo install cargo-deb
+          source $HOME/.cargo/env
+          cargo install --version 1.33.0 cargo-deb
           cargo deb --target=x86_64-unknown-linux-gnu
       - name: Copy binaries
         run: |
