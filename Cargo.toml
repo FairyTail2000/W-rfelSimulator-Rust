@@ -36,3 +36,4 @@ name = "wuerfeln"
 [profile.release]
 strip = "symbols"
 lto = true
+panic = "abort"
