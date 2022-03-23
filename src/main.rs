@@ -6,14 +6,14 @@ use crate::color::get_color;
 use crate::preferences::Settings;
 use ansi_term::Colour;
 use clap::{App, Arg};
-use colored_dice::{ColoredDice, ColoredDices};
+use dice::colored_dice::{ColoredDice, ColoredDices};
 use common::{Loadable, Rollable};
-use crit_dice::CritDices;
+use dice::crit_dice::CritDices;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
 use macros::{dbgprint, dbgprintln};
 use nachteil::{Advantage, Disadvantage};
-use normal_dice::Dices;
+use dice::normal_dice::Dices;
 use std::io;
 use std::io::{Error, Write};
 use std::ops::Deref;
@@ -23,6 +23,7 @@ use std::time::SystemTime;
 use zauber::Spells;
 use zerfallsreihen::operation::Operation;
 use zerfallsreihen::State;
+
 /**
  * Prints basic information's about the usage of the program
  * Also used for help message
@@ -90,7 +91,7 @@ fn handle_input(
 		} else if let Ok(sides) = parsed {
 			if allowed_dice_sites.dices.contains(&sides) {
 				let amount = ask_for_amount(error_message, "Anzahl");
-				let res = normal_dice::roll(amount, sides);
+				let res = dice::normal_dice::roll(amount, sides);
 				res.print_results(old_report_style, no_summary);
 			} else {
 				dbgprintln!("Die ist nicht erlaubt...")
@@ -234,7 +235,7 @@ fn roll_colored_dice(
 		//Input a number and auto compute values
 		let amount = ask_for_amount(error_message, "Farbiger Würfel Wert");
 		//Tuple of value, amount and result
-		let mut dices: Vec<(u8, usize, u64, String)> = Vec::with_capacity(amount as usize);
+		let mut dices: Vec<(u64, String)> = Vec::with_capacity(amount as usize);
 		let mut remaining = amount;
 
 		let mut copy: Vec<ColoredDice> = colored_dice.dices.to_vec();
@@ -245,15 +246,15 @@ fn roll_colored_dice(
 			for _ in 0..remaining / dice.value as usize {
 				result += *dice.roll() as u64;
 			}
-			let value = (dice.value, remaining / dice.value as usize, result, dice.long);
+			let value = (result, dice.long);
 			dices.push(value);
 			remaining %= dice.value as usize;
 		}
 
 		let mut accumulated_result: u64 = 0;
 		for result in dices {
-			dbgprintln!("{}: {}", result.3, result.2);
-			accumulated_result += result.2;
+			dbgprintln!("{}: {}", result.1, result.0);
+			accumulated_result += result.0;
 		}
 
 		dbgprintln!(

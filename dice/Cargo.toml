@@ -1,0 +1,18 @@
+[package]
+name = "dice"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+
+[dependencies.colored_dice]
+version = "1.0.0"
+path = "./colored_dice"
+
+[dependencies.crit_dice]
+version = "1.0.0"
+path = "./crit_dice"
+
+[dependencies.normal_dice]
+version = "1.0.0"
+path = "./normal_dice"

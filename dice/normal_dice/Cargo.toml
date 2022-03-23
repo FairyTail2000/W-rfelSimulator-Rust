@@ -1,5 +1,5 @@
 [package]
-name = "colored_dice"
+name = "normal_dice"
 version = "1.0.0"
 edition = "2021"
 
@@ -9,6 +9,6 @@ edition = "2021"
 random-integer = "1.2.1"
 serde = "1.0.130"
 serde_yaml = "0.8.21"
-macros = { version = "1.0.0", path = "../macros" }
+macros = { version = "1.0.0", path = "../../macros" }
 ansi_term = "0.12.1"
-common = { version = "1.0.0", path = "../common" }
+common = { version = "1.0.0", path = "../../common" }

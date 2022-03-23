@@ -59,50 +59,7 @@ impl Loadable<Vec<Self>> for Operation {
 
 impl Operation {
 	fn defaults() -> Vec<Self> {
-		return vec![
-			Operation {
-				display: "Alpha".parse().unwrap(),
-				electrons: None,
-				protons: Some(-2),
-				neutrons: Some(-2),
-			},
-			Operation {
-				display: "Beta hin".parse().unwrap(),
-				electrons: Some(1),
-				protons: Some(1),
-				neutrons: Some(-1),
-			},
-			Operation {
-				display: "Beta rück".parse().unwrap(),
-				electrons: Some(-1),
-				protons: Some(-1),
-				neutrons: Some(1),
-			},
-			Operation {
-				display: "Beta hin minus".parse().unwrap(),
-				electrons: Some(1),
-				protons: Some(-1),
-				neutrons: Some(1),
-			},
-			Operation {
-				display: "Beta rück plus".parse().unwrap(),
-				electrons: Some(-1),
-				protons: Some(1),
-				neutrons: Some(-1),
-			},
-			Operation {
-				display: "Gamma".parse().unwrap(),
-				electrons: Some(-1),
-				protons: None,
-				neutrons: None,
-			},
-			Operation {
-				display: "Delta".parse().unwrap(),
-				electrons: Some(2),
-				protons: Some(-1),
-				neutrons: None,
-			},
-		];
+		return include!("default_operation.rs");
 	}
 
 	pub fn apply(&self, state: State) -> State {
