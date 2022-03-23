@@ -1,7 +1,7 @@
 use crate::State;
 use ansi_term::Colour;
 use common::{settings_path, Loadable};
-use macros::dbgprintln;
+use common::macros::dbgprintln;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::fs::File;

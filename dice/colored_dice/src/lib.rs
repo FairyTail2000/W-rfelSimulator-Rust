@@ -1,6 +1,6 @@
 use ansi_term::Colour;
 use common::{settings_path, Loadable, Rollable};
-use macros::dbgprintln;
+use common::macros::dbgprintln;
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
 use std::fs::File;

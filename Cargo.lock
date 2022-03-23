@@ -77,7 +77,6 @@ version = "1.0.0"
 dependencies = [
  "ansi_term 0.12.1",
  "common",
- "macros",
  "random-integer",
  "serde",
  "serde_yaml",
@@ -111,7 +110,6 @@ name = "crit_dice"
 version = "1.0.0"
 dependencies = [
  "common",
- "macros",
  "random-integer",
  "random-number",
  "serde",
@@ -256,7 +254,6 @@ version = "1.0.0"
 dependencies = [
  "ansi_term 0.12.1",
  "common",
- "macros",
  "random-integer",
  "serde",
  "serde_yaml",
@@ -591,7 +588,6 @@ dependencies = [
  "common",
  "dialoguer",
  "dice",
- "macros",
  "nachteil",
  "random-integer",
  "serde",
@@ -625,7 +621,6 @@ version = "1.0.0"
 dependencies = [
  "ansi_term 0.12.1",
  "common",
- "macros",
  "serde",
  "serde_yaml",
 ]

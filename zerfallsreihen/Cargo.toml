@@ -9,7 +9,6 @@ build = "build.rs"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_yaml = "0.8.21"
 common = { version = "1.0.0", path = "../common" }
-macros = { version = "1.0.0", path = "../macros" }
 ansi_term = "0.12.1"
 
 [build-dependencies]

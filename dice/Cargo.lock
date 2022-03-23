@@ -35,7 +35,6 @@ version = "1.0.0"
 dependencies = [
  "ansi_term",
  "common",
- "macros",
  "random-integer",
  "serde",
  "serde_yaml",
@@ -54,7 +53,6 @@ name = "crit_dice"
 version = "1.0.0"
 dependencies = [
  "common",
- "macros",
  "random-integer",
  "random-number",
  "serde",
@@ -150,7 +148,6 @@ version = "1.0.0"
 dependencies = [
  "ansi_term",
  "common",
- "macros",
  "random-integer",
  "serde",
  "serde_yaml",

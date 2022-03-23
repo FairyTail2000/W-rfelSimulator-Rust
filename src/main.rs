@@ -9,7 +9,7 @@ use common::{Loadable, Rollable};
 use dice::crit_dice::CritDices;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
-use macros::{dbgprint, dbgprintln};
+use common::macros::{dbgprint, dbgprintln};
 use nachteil::{Advantage, Disadvantage};
 use dice::normal_dice::Dices;
 use std::io;
