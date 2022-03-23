@@ -65,6 +65,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "color"
+version = "1.0.0"
+dependencies = [
+ "ansi_term 0.12.1",
+]
+
+[[package]]
 name = "colored_dice"
 version = "1.0.0"
 dependencies = [
@@ -580,6 +587,7 @@ version = "1.2.0"
 dependencies = [
  "ansi_term 0.12.1",
  "clap",
+ "color",
  "common",
  "dialoguer",
  "dice",

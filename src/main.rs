@@ -1,8 +1,6 @@
-mod color;
 mod preferences;
-mod tests;
 
-use crate::color::get_color;
+use color::get_color;
 use crate::preferences::Settings;
 use ansi_term::Colour;
 use clap::{App, Arg};
