@@ -6,7 +6,7 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
-serde = { version = "1.0.130", features = ["derive"] }
+serde = { version = "1.0.137", features = ["derive"] }
 serde_yaml = "0.8.21"
 common = { version = "1.0.0", path = "../common" }
 ansi_term = "0.12.1"
