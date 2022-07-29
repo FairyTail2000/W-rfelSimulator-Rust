@@ -13,7 +13,7 @@ random-integer = "1.2.1"
 clap = "3.2.15"
 dialoguer = "0.10.1"
 serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.8"
+serde_yaml = "0.9"
 ansi_term = "0.12.1"
 dice = { version = "1.0.0", path = "./dice" }
 zerfallsreihen = { version = "1.0.0", path = "./zerfallsreihen" }
