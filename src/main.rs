@@ -3,7 +3,7 @@ mod preferences;
 use color::get_color;
 use crate::preferences::Settings;
 use ansi_term::Colour;
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use dice::colored_dice::{ColoredDice, ColoredDices};
 use common::{Loadable, Rollable};
 use dice::crit_dice::CritDices;
@@ -190,35 +190,40 @@ fn zerfallsreihe(stdout: &Term, operation: &Vec<Operation>) {
 	let _ = stdout.clear_last_lines(1);
 }
 
-fn get_app<'a>() -> App<'a> {
-	App::new("Würfeln")
+fn get_app() -> Command {
+	Command::new("Würfeln")
 		.version("1.0.0")
 		.author("Rafael Sundorf <developer.rafael.sundorf@gmail.com>")
 		.about("Hiermit kann man würfeln!")
-		.arg(Arg::with_name("old_style")
+		.arg(Arg::new("old_style")
 			.short('o')
 			.long("old_style")
 			.help("Nutzt den alten style um das Ergebnis anzuzeigen")
+			.action(clap::ArgAction::SetTrue)
 		)
-		.arg(Arg::with_name("no tutorial")
+		.arg(Arg::new("no tutorial")
 			.short('n')
 			.long("no-tutorial")
 			.help("Unterdrückt die Start Nachricht")
+			.action(clap::ArgAction::SetTrue)
 		)
-		.arg(Arg::with_name("no summary message")
+		.arg(Arg::new("no summary message")
 			.short('s')
 			.long("no-summary-message")
 			.help("Unterdrückt die kurze information nachdem das Würfelergebnis ausgegeben wurde")
+			.action(clap::ArgAction::SetTrue)
 		)
-		.arg(Arg::with_name("no select dice select")
+		.arg(Arg::new("no select dice select")
 			.short('d')
 			.long("no-select-dice-select")
 			.help("Verwendet die standard Eingabe anstatt einer Auswahl")
+			.action(clap::ArgAction::SetTrue)
 		)
-		.arg(Arg::with_name("number instead")
+		.arg(Arg::new("number instead")
 			.short('i')
 			.long("number-instead")
 			.help("Verwendet eine Zahlen eingabe anstatt einer Auswahl und Anzahl von farbigen würfeln")
+			.action(clap::ArgAction::SetTrue)
 		)
 }
 
@@ -326,13 +331,11 @@ fn main() -> std::io::Result<()> {
 		start.elapsed().unwrap().as_millis()
 	);
 
-	let old = matches.is_present("old_style") || preferences.old_style;
-	let no_dice_select =
-		matches.is_present("no select dice select") || preferences.no_select_dice_select;
-	let number_instead = matches.is_present("number instead") || preferences.number_instead;
-	let no_tutorial = matches.is_present("no tutorial") || preferences.no_tutorial;
-	let no_summary_message =
-		matches.is_present("no summary message") || preferences.no_summary_message;
+	let old = matches.get_flag("old_style") || preferences.old_style;
+	let no_dice_select = matches.get_flag("no select dice select") || preferences.no_select_dice_select;
+	let number_instead = matches.get_flag("number instead") || preferences.number_instead;
+	let no_tutorial = matches.get_flag("no tutorial") || preferences.no_tutorial;
+	let no_summary_message = matches.get_flag("no summary message") || preferences.no_summary_message;
 
 	#[cfg(debug_assertions)]
 	let error_message = format!(
