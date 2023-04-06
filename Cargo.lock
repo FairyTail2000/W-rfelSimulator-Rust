@@ -339,7 +339,7 @@ dependencies = [
  "common",
  "random-integer",
  "serde",
- "serde_yaml 0.9.19",
+ "serde_yaml 0.9.20",
 ]
 
 [[package]]
@@ -598,9 +598,9 @@ dependencies = [
 
 [[package]]
 name = "serde_yaml"
-version = "0.9.19"
+version = "0.9.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f82e6c8c047aa50a7328632d067bcae6ef38772a79e28daf32f735e0e4f3dd10"
+checksum = "0feade41f4649f0549d22df8c0432b2c25128b50f5d926b22173022e25b7c69e"
 dependencies = [
  "indexmap",
  "itoa",
@@ -819,7 +819,7 @@ dependencies = [
  "nachteil",
  "random-integer",
  "serde",
- "serde_yaml 0.9.19",
+ "serde_yaml 0.9.20",
  "zauber",
  "zerfallsreihen",
 ]
@@ -840,7 +840,7 @@ dependencies = [
  "common",
  "random-integer",
  "serde",
- "serde_yaml 0.9.19",
+ "serde_yaml 0.9.20",
 ]
 
 [[package]]
@@ -850,7 +850,7 @@ dependencies = [
  "ansi_term",
  "common",
  "serde",
- "serde_yaml 0.9.19",
+ "serde_yaml 0.9.20",
 ]
 
 [[package]]
