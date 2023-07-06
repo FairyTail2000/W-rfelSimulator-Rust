@@ -10,7 +10,7 @@ license = "GPL3"
 
 [dependencies]
 random-integer = "1.2.1"
-clap = "4.3.10"
+clap = "4.3.11"
 dialoguer = "0.10.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
