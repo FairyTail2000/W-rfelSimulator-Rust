@@ -13,7 +13,7 @@ use common::macros::{dbgprint, dbgprintln};
 use nachteil::{Advantage, Disadvantage};
 use dice::normal_dice::Dices;
 use std::io;
-use std::io::{Error, Write};
+use std::io::Write;
 use std::ops::Deref;
 use std::process::exit;
 #[cfg(debug_assertions)]
@@ -102,7 +102,7 @@ fn handle_input(
 }
 
 fn ask_for_amount(error_message: &str, prompt: &str) -> usize {
-	let input: Result<String, Error> = Input::new()
+	let input = Input::new()
 		.with_prompt(prompt)
 		.validate_with(|input: &String| -> Result<(), &str> {
 			if let Ok(_parsed) = input.parse::<u64>() {
@@ -113,7 +113,10 @@ fn ask_for_amount(error_message: &str, prompt: &str) -> usize {
 		})
 		.interact_text();
 	return if let Ok(result) = input {
-		result.parse().unwrap()
+		match result.parse() {
+			Ok(res) => res,
+			Err(_e) => 0
+		}
 	} else {
 		0
 	};
@@ -130,34 +133,49 @@ fn validator(val: &String) -> Result<(), &'static str> {
 	}
 }
 
-fn zerfallsreihe(stdout: &Term, operation: &Vec<Operation>) {
-	let protons_input: Result<String, Error> = Input::new()
+fn decay_series(stdout: &Term, operation: &Vec<Operation>) {
+	let protons_input = Input::new()
 		.with_prompt("Protonen")
 		.validate_with(validator)
 		.interact_text();
-	let neutrons_input: Result<String, Error> = Input::new()
+	let neutrons_input = Input::new()
 		.with_prompt("Neutronen")
 		.validate_with(validator)
 		.interact_text();
-	let electrons_input: Result<String, Error> = Input::new()
+	let electrons_input = Input::new()
 		.with_prompt("Elektronen")
 		.validate_with(validator)
 		.interact_text();
 	let _ = stdout.clear_last_lines(3);
 
-	let protons = match i64::from_str_radix(&*protons_input.unwrap().trim(), 10) {
-		Ok(val) => val,
-		Err(_) => 0,
+	let protons = match protons_input {
+		Ok(inp) => {
+			match i64::from_str_radix(&*inp.trim(), 10) {
+				Ok(val) => val,
+				Err(_) => 0,
+			}
+		}
+		Err(_err) => 0
 	};
 
-	let neutrons = match i64::from_str_radix(&*neutrons_input.unwrap().trim(), 10) {
-		Ok(val) => val,
-		Err(_) => 0,
+	let neutrons = match neutrons_input {
+		Ok(inp) => {
+			match i64::from_str_radix(&*inp.trim(), 10) {
+				Ok(val) => val,
+				Err(_) => 0,
+			}
+		}
+		Err(_err) => 0
 	};
 
-	let electrons = match i64::from_str_radix(&*electrons_input.unwrap().trim(), 10) {
-		Ok(val) => val,
-		Err(_) => 0,
+	let electrons = match electrons_input {
+		Ok(inp) => {
+			match i64::from_str_radix(&*inp.trim(), 10) {
+				Ok(val) => val,
+				Err(_) => 0,
+			}
+		}
+		Err(_err) => 0
 	};
 
 	let mut state = State::from((electrons, protons, neutrons));
@@ -238,7 +256,7 @@ fn roll_colored_dice(
 		//Input a number and auto compute values
 		let amount = ask_for_amount(error_message, "Farbiger Würfel Wert");
 		//Tuple of value, amount and result
-		let mut dices: Vec<(u64, String)> = Vec::with_capacity(amount as usize);
+		let mut dices: Vec<(u64, String)> = Vec::with_capacity(amount);
 		let mut remaining = amount;
 
 		let mut copy: Vec<ColoredDice> = colored_dice.dices.to_vec();
@@ -271,16 +289,27 @@ fn roll_colored_dice(
 			possibilities.push(&*dice.long);
 		}
 
-		let selection = MultiSelect::new()
-			.items(&possibilities)
-			.with_prompt(
-				"Wähle deine farbigen Würfel (Mit der Leertaste auswählen und Enter bestätigen)",
-			)
-			.interact_on(stderr)?;
-		if selection.len() == 0 {
+
+
+		let selection = {
+			let sel = MultiSelect::new()
+				.items(&possibilities)
+				.with_prompt(
+					"Wähle deine farbigen Würfel (Mit der Leertaste auswählen und Enter bestätigen)",
+				)
+				.interact_on(stderr);
+
+			match sel {
+				Ok(sel) => sel,
+				Err(_err) => vec![]
+			}
+		};
+
+		if selection.is_empty() {
 			dbgprintln!("Nichts gewählt.");
 			return Ok(());
 		}
+
 
 		let mut result: Vec<(&String, u64)> = Vec::with_capacity(selection.len());
 		let mut accumulated_amount: u64 = 0;
@@ -308,7 +337,7 @@ fn roll_colored_dice(
 	Ok(())
 }
 
-fn main() -> std::io::Result<()> {
+fn main() -> io::Result<()> {
 	let matches = get_app().get_matches();
 
 	#[cfg(debug_assertions)]
@@ -383,14 +412,20 @@ fn main() -> std::io::Result<()> {
 	];
 
 	while !finished {
-		let selection = Select::new().items(&items).default(1).interact_opt()?;
+		let selection = {
+			let sel = Select::new().items(&items).default(1).interact_opt();
+			match sel {
+				Ok(s) => s,
+				Err(_) => None
+			}
+		};
 
 		if selection == None {
 			finished = true;
 			continue;
 		}
 
-		let answer = items.get(selection.unwrap()).unwrap().clone();
+		let answer = *items.get(selection.unwrap()).unwrap();
 
 		if answer == "Farbiger Würfel" {
 			match roll_colored_dice(
@@ -446,7 +481,7 @@ fn main() -> std::io::Result<()> {
 		} else if answer == "Verlassen" {
 			finished = true;
 		} else if answer == "Zerfallsreihen" {
-			zerfallsreihe(&stdout, &operation);
+			decay_series(&stdout, &operation);
 		} else if answer == "Random Zauber" {
 			let string: String = "Kampfzauber".parse().unwrap();
 			let items: Vec<String> = spells.iter().map(|x| x.name.clone()).collect();
@@ -455,11 +490,19 @@ fn main() -> std::io::Result<()> {
 				Some(index) => index,
 			};
 
-			match Select::new()
-				.items(&items)
-				.default(default)
-				.interact_opt()?
-			{
+			let selection = {
+				let interact_res = Select::new()
+					.items(&items)
+					.default(default)
+					.interact_opt();
+
+				match interact_res {
+					Ok(res) => res,
+					Err(_) => None
+				}
+			};
+
+			match selection	{
 				None => continue,
 				Some(index) => dbgprintln!("{}", spells[index].roll()),
 			}
@@ -498,10 +541,16 @@ fn main() -> std::io::Result<()> {
 					dice_items.push(allowed_dice_site.to_string())
 				}
 
-				let selection = Select::new()
-					.items(&dice_items)
-					.default(3)
-					.interact_on_opt(&Term::stderr())?;
+				let selection = {
+					let interact_res = Select::new()
+						.items(&dice_items)
+						.default(3)
+						.interact_on_opt(&Term::stderr());
+					match interact_res {
+						Ok(res) => res,
+						Err(_) => None
+					}
+				};
 				if selection == None {
 					continue;
 				}
