@@ -60,12 +60,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "autocfg"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
-
-[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -125,7 +119,7 @@ dependencies = [
  "common",
  "random-integer",
  "serde",
- "serde_yaml 0.8.26",
+ "serde_yaml",
 ]
 
 [[package]]
@@ -159,7 +153,7 @@ dependencies = [
  "random-integer",
  "random-number",
  "serde",
- "serde_yaml 0.8.26",
+ "serde_yaml",
 ]
 
 [[package]]
@@ -241,25 +235,9 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
-
-[[package]]
-name = "hashbrown"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
-
-[[package]]
-name = "indexmap"
-version = "1.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10a35a97730320ffe8e2d410b5d3b69279b98d2c14bdb8b70ea89ecf7888d41e"
-dependencies = [
- "autocfg",
- "hashbrown 0.12.3",
-]
 
 [[package]]
 name = "indexmap"
@@ -268,7 +246,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5477fe2230a79769d8dc68e0eabf5437907c0457a5614a9e8dddb67f65eb65d"
 dependencies = [
  "equivalent",
- "hashbrown 0.14.0",
+ "hashbrown",
 ]
 
 [[package]]
@@ -284,12 +262,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99227334921fae1a979cf0bfdfcc6b3e5ce376ef57e16fb6fb3ea2ed6095f80c"
 
 [[package]]
-name = "linked-hash-map"
-version = "0.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
-
-[[package]]
 name = "macros"
 version = "1.0.0"
 
@@ -300,7 +272,7 @@ dependencies = [
  "common",
  "random-integer",
  "serde",
- "serde_yaml 0.9.27",
+ "serde_yaml",
 ]
 
 [[package]]
@@ -311,7 +283,7 @@ dependencies = [
  "common",
  "random-integer",
  "serde",
- "serde_yaml 0.8.26",
+ "serde_yaml",
 ]
 
 [[package]]
@@ -539,23 +511,11 @@ dependencies = [
 
 [[package]]
 name = "serde_yaml"
-version = "0.8.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "578a7433b776b56a35785ed5ce9a7e777ac0598aac5a6dd1b4b18a307c7fc71b"
-dependencies = [
- "indexmap 1.9.1",
- "ryu",
- "serde",
- "yaml-rust",
-]
-
-[[package]]
-name = "serde_yaml"
 version = "0.9.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3cc7a1570e38322cfe4154732e5110f887ea57e22b76f4bfd32b5bdd3368666c"
 dependencies = [
- "indexmap 2.0.0",
+ "indexmap",
  "itoa",
  "ryu",
  "serde",
@@ -777,18 +737,9 @@ dependencies = [
  "nachteil",
  "random-integer",
  "serde",
- "serde_yaml 0.9.27",
+ "serde_yaml",
  "zauber",
  "zerfallsreihen",
-]
-
-[[package]]
-name = "yaml-rust"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
-dependencies = [
- "linked-hash-map",
 ]
 
 [[package]]
@@ -798,7 +749,7 @@ dependencies = [
  "common",
  "random-integer",
  "serde",
- "serde_yaml 0.9.27",
+ "serde_yaml",
 ]
 
 [[package]]
@@ -808,7 +759,7 @@ dependencies = [
  "ansi_term",
  "common",
  "serde",
- "serde_yaml 0.9.27",
+ "serde_yaml",
 ]
 
 [[package]]

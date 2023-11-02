@@ -9,5 +9,5 @@ edition = "2021"
 random-integer = "1.2.1"
 random-number = "0.1.6"
 serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.8"
+serde_yaml = "0.9.27"
 common = { version = "1.0.0", path = "../../common" }

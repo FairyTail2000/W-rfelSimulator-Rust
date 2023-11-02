@@ -8,6 +8,6 @@ edition = "2021"
 [dependencies]
 random-integer = "1.2.1"
 serde = "1.0.130"
-serde_yaml = "0.8.21"
+serde_yaml = "0.9.27"
 ansi_term = "0.12.1"
 common = { version = "1.0.0", path = "../../common" }
