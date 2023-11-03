@@ -9,7 +9,7 @@ use common::{Loadable, Rollable};
 use dice::crit_dice::CritDices;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
-use common::macros::{dbgprint, dbgprintln};
+use common::macros::{dbgprint, dbgprintln, edbgprintln};
 use disadvantage::Disadvantage;
 use dice::normal_dice::Dices;
 use std::io;
@@ -30,9 +30,16 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
 	dbgprint!("Erlaubte Würfelseiten:");
 	let mut vector: Vec<String> = vec![];
 	for (index, site) in allowed_dice_sites.dices.iter().enumerate() {
-		vector.push((*format!(" {}", site)).parse().unwrap());
+		match (*format!(" {}", site)).parse() {
+			Ok(val) => vector.push(val),
+			Err(e) => edbgprintln!("{}", e)
+		};
+
 		if allowed_dice_sites.len() != index + 1 {
-			vector.push((*format!(",")).parse().unwrap());
+			match (*format!(",")).parse() {
+				Ok(val) => vector.push(val),
+				Err(e) => edbgprintln!("{}", e)
+			};
 		}
 	}
 	dbgprintln!("{}", vector.join(""));
@@ -45,7 +52,7 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
 		let color: Colour = match get_color(&site.color) {
 			Ok(c) => c,
 			Err(e) => {
-				eprintln!("{}", e.deref());
+				edbgprintln!("{}", e.deref());
 				exit(-1);
 			}
 		};
@@ -53,12 +60,15 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
 		match (*format!(" {} ({})", color.paint(&site.long), site.short)).parse() {
 			Ok(str) => vector.push(str),
 			Err(e) => {
-				eprintln!("{}", e);
+				edbgprintln!("{}", e);
 			}
 		};
 
 		if allowed_coloured_dices.len() != index + 1 {
-			vector.push((*format!(",")).parse().unwrap());
+			match (*format!(",")).parse() {
+				Ok(val) => vector.push(val),
+				Err(e) => edbgprintln!("{}", e)
+			}
 		}
 	}
 
@@ -291,8 +301,6 @@ fn roll_colored_dice(
 			possibilities.push(&*dice.long);
 		}
 
-
-
 		let selection = {
 			let sel = MultiSelect::new()
 				.items(&possibilities)
@@ -316,7 +324,10 @@ fn roll_colored_dice(
 		let mut result: Vec<(&String, u64)> = Vec::with_capacity(selection.len());
 		let mut accumulated_amount: u64 = 0;
 		for select in selection {
-			let sel = colored_dice.dices.get(select).unwrap();
+			let sel = match colored_dice.dices.get(select) {
+				Some(val) => val,
+				None => continue
+			};
 			let amount = ask_for_amount(error_message, &*format!("Anzahl {}", sel.long));
 			// Amount but shorter
 			let mut am: u64 = 0;
@@ -356,10 +367,10 @@ fn main() -> io::Result<()> {
 	let crits = CritDices::load(None);
 
 	#[cfg(debug_assertions)]
-	dbgprintln!(
-		"Loading Configuration finished, took {} ms",
-		start.elapsed().unwrap().as_millis()
-	);
+	match start.elapsed() {
+		Ok(elapsed) => dbgprintln!("Loading Configuration finished, took {} ms", elapsed.as_millis()),
+		Err(err) => edbgprintln!("{}", err)
+	}
 
 	let old = matches.get_flag("old_style") || preferences.old_style;
 	let no_dice_select = matches.get_flag("no select dice select") || preferences.no_select_dice_select;
@@ -453,8 +464,15 @@ fn main() -> io::Result<()> {
 				}
 			}
 		} else if answer == "Hilfe" {
+			let h = match "h".parse() {
+				Ok(res) => res,
+				Err(e) => {
+					edbgprintln!("{}", e);
+					continue
+				}
+			};
 			finished = handle_input(
-				"h".parse().unwrap(),
+				h,
 				old,
 				&colored_dice,
 				&normal_dices,
@@ -503,7 +521,13 @@ fn main() -> io::Result<()> {
 		} else if answer == "Zerfallsreihen" {
 			decay_series(&stdout, &operation);
 		} else if answer == "Random Zauber" {
-			let string: String = "Kampfzauber".parse().unwrap();
+			let string: String = match "Kampfzauber".parse() {
+				Ok(str) => str,
+				Err(err) => {
+					edbgprintln!("{}", err);
+					continue
+				}
+			};
 			let items: Vec<String> = spells.iter().map(|x| x.name.clone()).collect();
 			let default = match items.iter().position(|x| x.clone() == string) {
 				None => 0,
@@ -550,7 +574,7 @@ fn main() -> io::Result<()> {
 							no_summary_message,
 						);
 					}
-					Err(error) => println!("error: {}", error),
+					Err(error) => edbgprintln!("error: {}", error),
 				}
 			} else {
 				let mut dice_items: Vec<String> = vec![];
@@ -573,7 +597,10 @@ fn main() -> io::Result<()> {
 				}
 				let input: &str = match selection {
 					None => continue,
-					Some(sec) => &dice_items.get(sec).unwrap(),
+					Some(sec) => match dice_items.get(sec) {
+						None => continue,
+						Some(item) => &item
+					}
 				};
 
 				finished = handle_input(
