@@ -26,7 +26,7 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/zauber/" # Location of package manifests
+    directory: "/spell/" # Location of package manifests
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo" # See documentation for possible values

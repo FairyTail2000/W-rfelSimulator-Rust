@@ -18,7 +18,7 @@ ansi_term = "0.12.1"
 dice = { version = "1.0.0", path = "./dice" }
 decay_series = { version = "1.0.0", path = "./decay_series" }
 common = { version = "1.0.0", path = "./common" }
-zauber = { version = "1.0.0", path = "./zauber" }
+spell = { version = "1.0.0", path = "./spell" }
 disadvantage = { version = "1.0.0", path = "./disadvantage" }
 color = { version = "1.0.0", path = "./color" }
 

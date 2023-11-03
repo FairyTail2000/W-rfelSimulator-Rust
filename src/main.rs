@@ -18,7 +18,7 @@ use std::ops::Deref;
 use std::process::exit;
 #[cfg(debug_assertions)]
 use std::time::SystemTime;
-use zauber::Spells;
+use spell::Spells;
 use decay_series::operation::Operation;
 use decay_series::State;
 

@@ -104,7 +104,7 @@ impl Spells {
 
 impl Loadable<Vec<Spells>> for Spells {
 	fn load(file: Option<&str>) -> Vec<Spells> {
-		let alt = settings_path("zauber.yaml");
+		let alt = settings_path("spell.yaml");
 		let file_name = file.unwrap_or(alt.to_str().unwrap());
 		if Path::new(file_name).exists() {
 			let file = File::open(file_name).unwrap();
