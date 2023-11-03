@@ -22,7 +22,7 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/nachteil/" # Location of package manifests
+    directory: "/disadvantage/" # Location of package manifests
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo" # See documentation for possible values
@@ -30,6 +30,6 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/zerfallsreihen/" # Location of package manifests
+    directory: "/decay_series/" # Location of package manifests
     schedule:
       interval: "daily"

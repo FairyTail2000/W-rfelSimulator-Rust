@@ -1,4 +1,4 @@
 target
 .idea
-/nachteil/src/default_disadvantage.rs
-/zerfallsreihen/src/default_operation.rs
+/disadvantage/src/default_disadvantage.rs
+/decay_series/src/default_operation.rs

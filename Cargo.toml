@@ -16,10 +16,10 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 ansi_term = "0.12.1"
 dice = { version = "1.0.0", path = "./dice" }
-zerfallsreihen = { version = "1.0.0", path = "./zerfallsreihen" }
+decay_series = { version = "1.0.0", path = "./decay_series" }
 common = { version = "1.0.0", path = "./common" }
 zauber = { version = "1.0.0", path = "./zauber" }
-nachteil = { version = "1.0.0", path = "./nachteil"}
+disadvantage = { version = "1.0.0", path = "./disadvantage" }
 color = { version = "1.0.0", path = "./color" }
 
 [package.metadata.deb]

@@ -157,6 +157,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "decay_series"
+version = "1.0.0"
+dependencies = [
+ "ansi_term",
+ "common",
+ "serde",
+ "serde_yaml",
+]
+
+[[package]]
 name = "dialoguer"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -197,6 +207,16 @@ dependencies = [
  "option-ext",
  "redox_users",
  "windows-sys",
+]
+
+[[package]]
+name = "disadvantage"
+version = "1.0.0"
+dependencies = [
+ "common",
+ "random-integer",
+ "serde",
+ "serde_yaml",
 ]
 
 [[package]]
@@ -264,16 +284,6 @@ checksum = "99227334921fae1a979cf0bfdfcc6b3e5ce376ef57e16fb6fb3ea2ed6095f80c"
 [[package]]
 name = "macros"
 version = "1.0.0"
-
-[[package]]
-name = "nachteil"
-version = "1.0.0"
-dependencies = [
- "common",
- "random-integer",
- "serde",
- "serde_yaml",
-]
 
 [[package]]
 name = "normal_dice"
@@ -732,14 +742,14 @@ dependencies = [
  "clap",
  "color",
  "common",
+ "decay_series",
  "dialoguer",
  "dice",
- "nachteil",
+ "disadvantage",
  "random-integer",
  "serde",
  "serde_yaml",
  "zauber",
- "zerfallsreihen",
 ]
 
 [[package]]
@@ -748,16 +758,6 @@ version = "1.0.0"
 dependencies = [
  "common",
  "random-integer",
- "serde",
- "serde_yaml",
-]
-
-[[package]]
-name = "zerfallsreihen"
-version = "1.0.0"
-dependencies = [
- "ansi_term",
- "common",
  "serde",
  "serde_yaml",
 ]

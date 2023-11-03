@@ -10,7 +10,7 @@ use dice::crit_dice::CritDices;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
 use common::macros::{dbgprint, dbgprintln};
-use nachteil::Disadvantage;
+use disadvantage::Disadvantage;
 use dice::normal_dice::Dices;
 use std::io;
 use std::io::Write;
@@ -19,8 +19,8 @@ use std::process::exit;
 #[cfg(debug_assertions)]
 use std::time::SystemTime;
 use zauber::Spells;
-use zerfallsreihen::operation::Operation;
-use zerfallsreihen::State;
+use decay_series::operation::Operation;
+use decay_series::State;
 
 /**
  * Prints basic information's about the usage of the program
@@ -503,7 +503,7 @@ fn main() -> io::Result<()> {
 				Some(index) => dbgprintln!("{}", spells[index].roll()),
 			}
 		} else if answer == "Random Nachteil" {
-			let rando = nachteil::get_random(&disadvantages);
+			let rando = disadvantage::get_random(&disadvantages);
 			dbgprintln!("{}", rando);
 		} else {
 			dbgprint!("Seitenanzahl: ");
