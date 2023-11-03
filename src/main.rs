@@ -50,11 +50,13 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
 			}
 		};
 
-		vector.push(
-			(*format!(" {} ({})", color.paint(&site.long), site.short))
-				.parse()
-				.unwrap(),
-		);
+		match (*format!(" {} ({})", color.paint(&site.long), site.short)).parse() {
+			Ok(str) => vector.push(str),
+			Err(e) => {
+				eprintln!("{}", e);
+			}
+		};
+
 		if allowed_coloured_dices.len() != index + 1 {
 			vector.push((*format!(",")).parse().unwrap());
 		}
@@ -421,7 +423,21 @@ fn main() -> io::Result<()> {
 			continue;
 		}
 
-		let answer = *items.get(selection.unwrap()).unwrap();
+		let answer = {
+			match selection {
+				None => {
+					continue
+				}
+				Some(sel) => {
+					match items.get(sel) {
+						Some(sel) => *sel,
+						None => {
+							continue
+						}
+					}
+				}
+			}
+		};
 
 		if answer == "Farbiger Würfel" {
 			match roll_colored_dice(
@@ -446,7 +462,7 @@ fn main() -> io::Result<()> {
 				no_summary_message,
 			);
 		} else if answer == "Crit" {
-			let input: String = Input::new()
+			let input = Input::new()
 				.with_prompt("Anzahl")
 				.validate_with(|input: &String| -> Result<(), &str> {
 					let new_val = input.trim();
@@ -464,12 +480,20 @@ fn main() -> io::Result<()> {
 						Err(_) => Err("Bitte eine positive Ganzzahl eingeben"),
 					}
 				})
-				.interact_text()
-				.unwrap();
-			let count = match i16::from_str_radix(&*input, 10) {
-				Ok(c) => c,
-				Err(e) => {
-					eprintln!("{}", e);
+				.interact_text();
+
+			let count = match input {
+				Ok(inp) => {
+					match i16::from_str_radix(&*inp, 10) {
+						Ok(c) => c,
+						Err(e) => {
+							eprintln!("{}", e);
+							continue;
+						}
+					}
+				}
+				Err(err) => {
+					eprintln!("{}", err);
 					continue;
 				}
 			};
