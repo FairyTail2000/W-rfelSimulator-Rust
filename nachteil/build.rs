@@ -31,5 +31,4 @@ fn generate (src_file: &str, dest_file: &str, name: &str) {
 
 fn main() {
     generate("disadvantage.yaml", "src/default_disadvantage.rs", "Disadvantage");
-    generate("advantage.yaml", "src/default_advantage.rs", "Advantage");
 }

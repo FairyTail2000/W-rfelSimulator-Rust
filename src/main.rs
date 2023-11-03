@@ -10,7 +10,7 @@ use dice::crit_dice::CritDices;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
 use common::macros::{dbgprint, dbgprintln};
-use nachteil::{Advantage, Disadvantage};
+use nachteil::Disadvantage;
 use dice::normal_dice::Dices;
 use std::io;
 use std::io::Write;
@@ -351,7 +351,6 @@ fn main() -> io::Result<()> {
 	let operation = Operation::load(None);
 	let spells = Spells::load(None);
 	let disadvantages: Vec<Disadvantage> = Disadvantage::load(None);
-	let advantages: Vec<Advantage> = Advantage::load(None);
 	let crits = CritDices::load(None);
 
 	#[cfg(debug_assertions)]
@@ -388,8 +387,6 @@ fn main() -> io::Result<()> {
 	dbgprintln!("{:?}\n", spells);
 	#[cfg(debug_assertions)]
 	dbgprintln!("{:?}\n", disadvantages);
-	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}\n", advantages);
 
 	let mut finished = false;
 	if !no_tutorial {
@@ -405,7 +402,6 @@ fn main() -> io::Result<()> {
 		"Crit",
 		"Zerfallsreihen",
 		"Random Zauber",
-		"Random Vorteil",
 		"Random Nachteil",
 		"Hilfe",
 		"Verlassen",
@@ -508,9 +504,6 @@ fn main() -> io::Result<()> {
 			}
 		} else if answer == "Random Nachteil" {
 			let rando = nachteil::get_random(&disadvantages);
-			dbgprintln!("{}", rando);
-		} else if answer == "Random Vorteil" {
-			let rando = nachteil::get_random(&advantages);
 			dbgprintln!("{}", rando);
 		} else {
 			dbgprint!("Seitenanzahl: ");

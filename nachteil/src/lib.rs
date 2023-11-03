@@ -12,12 +12,6 @@ pub struct Disadvantage {
 	description: String,
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize, Default, Hash, Debug, Clone)]
-pub struct Advantage {
-	name: String,
-	description: String,
-}
-
 impl Loadable<Vec<Disadvantage>> for Disadvantage {
 	fn load(file: Option<&str>) -> Vec<Disadvantage> {
 		let alt = settings_path("nachteile.yaml");
@@ -70,77 +64,13 @@ impl Loadable<Vec<Disadvantage>> for Disadvantage {
 	}
 }
 
-impl Loadable<Vec<Advantage>> for Advantage {
-	fn load(file: Option<&str>) -> Vec<Advantage> {
-		let alt = settings_path("vorteile.yaml");
-		let file_name = file.unwrap_or(alt.to_str().unwrap());
-		if Path::new(file_name).exists() {
-			let file = File::open(file_name).unwrap();
-			let buf_reader = BufReader::new(file);
-			match serde_yaml::from_reader::<BufReader<File>, Vec<Advantage>>(buf_reader) {
-				Ok(disadvantages) => disadvantages,
-				Err(err) => {
-					eprintln!("{}", err);
-					let file = OpenOptions::new()
-						.write(true)
-						.truncate(true)
-						.open(file_name)
-						.unwrap();
-					let writer = BufWriter::new(file);
-					match serde_yaml::to_writer(writer, &Advantage::defaults()) {
-						Ok(_) => {}
-						Err(err) => {
-							eprintln!("Couldn't write default values to file!");
-							eprintln!("{}", err);
-						}
-					}
-					Advantage::defaults()
-				}
-			}
-		} else {
-			match File::create(file_name) {
-				Ok(file) => {
-					let writer = BufWriter::new(file);
-					match serde_yaml::to_writer::<BufWriter<File>, Vec<Advantage>>(
-						writer,
-						&Advantage::defaults(),
-					) {
-						Ok(_) => {
-							println!("Neue Nachteile wurden erzeugt");
-						}
-						Err(err) => {
-							eprintln!("{}", err)
-						}
-					}
-				}
-				Err(err) => {
-					eprintln!("{}", err);
-				}
-			}
-			Advantage::defaults()
-		}
-	}
-}
-
 impl Disadvantage {
 	pub fn defaults() -> Vec<Disadvantage> {
 		return include!("default_disadvantage.rs");
 	}
 }
 
-impl Advantage {
-	pub fn defaults() -> Vec<Advantage> {
-		return include!("default_advantage.rs");
-	}
-}
-
 impl Display for Disadvantage {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{}\n{}", self.name, self.description)
-	}
-}
-
-impl Display for Advantage {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		write!(f, "{}\n{}", self.name, self.description)
 	}
