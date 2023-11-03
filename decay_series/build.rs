@@ -52,5 +52,5 @@ fn generate (src_file: &str, dest_file: &str) {
 }
 
 fn main() {
-    generate("zerfallsreihe.yaml", "src/default_operation.rs");
+    generate("decay_series.yaml", "src/default_operation.rs");
 }

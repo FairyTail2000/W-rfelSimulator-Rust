@@ -14,7 +14,7 @@ pub struct Disadvantage {
 
 impl Loadable<Vec<Disadvantage>> for Disadvantage {
 	fn load(file: Option<&str>) -> Vec<Disadvantage> {
-		let alt = settings_path("nachteile.yaml");
+		let alt = settings_path("disadvantage.yaml");
 		let file_name = file.unwrap_or(alt.to_str().unwrap());
 		if Path::new(file_name).exists() {
 			let file = File::open(file_name).unwrap();

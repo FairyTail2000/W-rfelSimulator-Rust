@@ -24,7 +24,7 @@ impl Display for Operation {
 
 impl Loadable<Vec<Self>> for Operation {
 	fn load(file: Option<&str>) -> Vec<Self> {
-		let alt = settings_path("zerfallsreihe.yaml");
+		let alt = settings_path("decay_series.yaml");
 		let file_name = file.unwrap_or(alt.to_str().unwrap());
 
 		if Path::new(file_name).exists() {
