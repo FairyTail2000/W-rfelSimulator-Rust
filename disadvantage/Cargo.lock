@@ -44,6 +44,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "disadvantage"
+version = "1.0.0"
+dependencies = [
+ "common",
+ "random-integer",
+ "serde",
+ "serde_yaml",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -102,16 +112,6 @@ checksum = "dd8f7255a17a627354f321ef0055d63b898c6fb27eff628af4d1b66b7331edf6"
 [[package]]
 name = "macros"
 version = "1.0.0"
-
-[[package]]
-name = "nachteil"
-version = "1.0.0"
-dependencies = [
- "common",
- "random-integer",
- "serde",
- "serde_yaml",
-]
 
 [[package]]
 name = "option-ext"
@@ -220,18 +220,18 @@ checksum = "f3f6f92acf49d1b98f7a81226834412ada05458b7364277387724a237f062695"
 
 [[package]]
 name = "serde"
-version = "1.0.190"
+version = "1.0.192"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91d3c334ca1ee894a2c6f6ad698fe8c435b76d504b13d436f0685d648d6d96f7"
+checksum = "bca2a08484b285dcb282d0f67b26cadc0df8b19f8c12502c13d966bf9482f001"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.190"
+version = "1.0.192"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67c5609f394e5c2bd7fc51efda478004ea80ef42fee983d5c67a65e34f32c0e3"
+checksum = "d6c7207fbec9faa48073f3e3074cbe553af6ea512d7c21ba46e434e70ea9fbc1"
 dependencies = [
  "proc-macro2",
  "quote",
