@@ -7,7 +7,7 @@ build = "build.rs"
 
 [dependencies]
 serde = { version = "1.0.197", features = ["derive"] }
-serde_yaml = "0.9.31"
+serde_yaml = "0.9.33"
 common = { version = "1.0.0", path = "../common" }
 ansi_term = "0.12.1"
 
