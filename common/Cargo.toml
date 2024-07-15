@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 directories = "5.0.1"
 macros = { version = "1.0.0", path = "macros" }
+cpuid = "0.1.1"

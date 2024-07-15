@@ -14,6 +14,7 @@ use disadvantage::Disadvantage;
 use dice::normal_dice::Dices;
 use std::io;
 use std::io::Write;
+use std::num::ParseIntError;
 use std::ops::Deref;
 use std::process::exit;
 #[cfg(debug_assertions)]
@@ -28,20 +29,13 @@ use decay_series::State;
  */
 fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice_sites: &Dices) {
 	dbgprint!("Erlaubte Würfelseiten:");
-	let mut vector: Vec<String> = vec![];
-	for (index, site) in allowed_dice_sites.dices.iter().enumerate() {
-		match (*format!(" {}", site)).parse() {
-			Ok(val) => vector.push(val),
-			Err(e) => edbgprintln!("{}", e)
-		};
-
+	let mut vector: Vec<String> = allowed_dice_sites.dices.iter().enumerate().map(|(index, site)| {
 		if allowed_dice_sites.len() != index + 1 {
-			match (*format!(",")).parse() {
-				Ok(val) => vector.push(val),
-				Err(e) => edbgprintln!("{}", e)
-			};
+			format!(" {},", site)
+		} else {
+			format!(" {}", site)
 		}
-	}
+	}).collect();
 	dbgprintln!("{}", vector.join(""));
 
 	vector.clear();
@@ -49,33 +43,23 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
 	dbgprint!("Erlaubte farbige Seiten:");
 
 	for (index, site) in allowed_coloured_dices.dices.iter().enumerate() {
-		let color: Colour = match get_color(&site.color) {
+		let color = match get_color(&site.color) {
 			Ok(c) => c,
 			Err(e) => {
-				edbgprintln!("{}", e.deref());
+				edbgprintln!("{}", e);
 				exit(-1);
 			}
 		};
-
-		match (*format!(" {} ({})", color.paint(&site.long), site.short)).parse() {
-			Ok(str) => vector.push(str),
-			Err(e) => {
-				edbgprintln!("{}", e);
-			}
-		};
+		vector.push(format!(" {} ({})", color.paint(&site.long), site.short));
 
 		if allowed_coloured_dices.len() != index + 1 {
-			match (*format!(",")).parse() {
-				Ok(val) => vector.push(val),
-				Err(e) => edbgprintln!("{}", e)
-			}
+			vector.push(",".to_string());
 		}
 	}
 
 	dbgprintln!("{}", vector.join(""));
 
-	let res = io::stdout().flush();
-	if let Err(_e) = res {
+	if io::stdout().flush().is_err() {
 		exit(-1)
 	}
 }
@@ -87,6 +71,7 @@ fn handle_input(
 	allowed_dice_sites: &Dices,
 	error_message: &str,
 	no_summary: bool,
+	use_hw_rng: bool,
 ) -> bool {
 	if input == "exit" || input == "e" {
 		true
@@ -94,44 +79,38 @@ fn handle_input(
 		print_startup_information(allowed_colored_dices, allowed_dice_sites);
 		false
 	} else {
-		let parsed = input.parse::<u8>();
-		if let Err(_err) = parsed {
-			dbgprintln!("Es muss eine Ganzzahl sein, wie oben beschrieben");
-			false
-		} else if let Ok(sides) = parsed {
-			if allowed_dice_sites.dices.contains(&sides) {
-				let amount = ask_for_amount(error_message, "Anzahl");
-				let res = dice::normal_dice::roll(amount, sides);
-				res.print_results(old_report_style, no_summary);
-			} else {
-				dbgprintln!("Die ist nicht erlaubt...")
+		match input.parse::<u8>() {
+			Ok(sides) => {
+				if allowed_dice_sites.dices.contains(&sides) {
+					let amount = ask_for_amount(error_message, "Anzahl");
+					let res = if use_hw_rng {
+						dice::normal_dice::roll_native(amount, sides).unwrap_or_else(|| {
+							eprintln!("Es ist ein Fehler aufgetreten beim Würfeln! Hardware Fehler, software generator wird verwendet!");
+							dice::normal_dice::roll(amount, sides)
+						})
+					} else {
+						dice::normal_dice::roll(amount, sides)
+					};
+					res.print_results(old_report_style, no_summary);
+				} else {
+					dbgprintln!("Die ist nicht erlaubt...")
+				}
+				false
 			}
-			false
-		} else {
-			false
+			Err(_) => {
+				dbgprintln!("Es muss eine Ganzzahl sein, wie oben beschrieben");
+				false
+			}
 		}
 	}
 }
 
 fn ask_for_amount(error_message: &str, prompt: &str) -> usize {
-	let input = Input::new()
+	Input::new()
 		.with_prompt(prompt)
-		.validate_with(|input: &String| -> Result<(), &str> {
-			if let Ok(_parsed) = input.parse::<u64>() {
-				Ok(())
-			} else {
-				Err(error_message)
-			}
-		})
-		.interact_text();
-	return if let Ok(result) = input {
-		match result.parse() {
-			Ok(res) => res,
-			Err(_e) => 0
-		}
-	} else {
-		0
-	};
+		.validate_with(|input: &String| input.parse::<u64>().map_or(Err(error_message), |_| Ok(())))
+		.interact_text()
+		.map_or(0, |x| x.parse().unwrap_or(0))
 }
 
 fn validator(val: &String) -> Result<(), &'static str> {
@@ -139,56 +118,32 @@ fn validator(val: &String) -> Result<(), &'static str> {
 	if new_val.is_empty() {
 		return Err("Bitte etwas eingeben");
 	}
-	match i64::from_str_radix(new_val, 10) {
-		Ok(_) => Ok(()),
-		Err(_) => Err("Bitte eine positive oder negative Ganzzahl eingeben"),
-	}
+	i64::from_str_radix(new_val, 10).map_or(Err("Bitte eine positive oder negative Ganzzahl eingeben"), |x| {
+		if x < 0 {
+			Err("Bitte eine positive Ganzzahl eingeben")
+		} else {
+			Ok(())
+		}
+	})
 }
 
 fn decay_series(stdout: &Term, operation: &Vec<Operation>) {
-	let protons_input = Input::new()
+	let protons = Input::new()
 		.with_prompt("Protonen")
 		.validate_with(validator)
-		.interact_text();
-	let neutrons_input = Input::new()
+		.interact_text()
+		.map_or(0, |x| i64::from_str_radix(&*x.trim(), 10).unwrap_or(0));
+	let neutrons = Input::new()
 		.with_prompt("Neutronen")
 		.validate_with(validator)
-		.interact_text();
-	let electrons_input = Input::new()
+		.interact_text()
+		.map_or(0, |x| i64::from_str_radix(&*x.trim(), 10).unwrap_or(0));
+	let electrons = Input::new()
 		.with_prompt("Elektronen")
 		.validate_with(validator)
-		.interact_text();
+		.interact_text()
+		.map_or(0, |x| i64::from_str_radix(&*x.trim(), 10).unwrap_or(0));
 	let _ = stdout.clear_last_lines(3);
-
-	let protons = match protons_input {
-		Ok(inp) => {
-			match i64::from_str_radix(&*inp.trim(), 10) {
-				Ok(val) => val,
-				Err(_) => 0,
-			}
-		}
-		Err(_err) => 0
-	};
-
-	let neutrons = match neutrons_input {
-		Ok(inp) => {
-			match i64::from_str_radix(&*inp.trim(), 10) {
-				Ok(val) => val,
-				Err(_) => 0,
-			}
-		}
-		Err(_err) => 0
-	};
-
-	let electrons = match electrons_input {
-		Ok(inp) => {
-			match i64::from_str_radix(&*inp.trim(), 10) {
-				Ok(val) => val,
-				Err(_) => 0,
-			}
-		}
-		Err(_err) => 0
-	};
 
 	let mut state = State::from((electrons, protons, neutrons));
 	let mut options: Vec<String> = operation.iter().map(|x| x.display.clone()).collect();
@@ -217,7 +172,7 @@ fn decay_series(stdout: &Term, operation: &Vec<Operation>) {
 			Err(_) => break,
 		}
 	}
-	let _ = stdout.clear_last_lines(1);
+	stdout.clear_last_lines(1).expect("Failed to clear last line");
 }
 
 fn get_app() -> Command {
@@ -255,6 +210,12 @@ fn get_app() -> Command {
 			.help("Verwendet eine Zahlen eingabe anstatt einer Auswahl und Anzahl von farbigen würfeln")
 			.action(clap::ArgAction::SetTrue)
 		)
+		.arg(Arg::new("hwrng")
+			.short('w')
+			.long("hwrng")
+			.help("Verwende den HWRNG (langsamer) anstatt des Software Generators")
+			.action(clap::ArgAction::SetTrue)
+		)
 }
 
 fn roll_colored_dice(
@@ -262,6 +223,7 @@ fn roll_colored_dice(
 	error_message: &str,
 	number_instead: bool,
 	stderr: &Term,
+	use_hw_rng: bool,
 ) -> io::Result<()> {
 	let mut possibilities: Vec<&str> = vec![];
 	if number_instead {
@@ -277,17 +239,16 @@ fn roll_colored_dice(
 		for dice in copy {
 			let mut result: u64 = 0;
 			for _ in 0..remaining / dice.value as usize {
-				result += *dice.roll() as u64;
+				result += *dice.roll(use_hw_rng) as u64;
 			}
 			let value = (result, dice.long);
 			dices.push(value);
 			remaining %= dice.value as usize;
 		}
 
-		let mut accumulated_result: u64 = 0;
+		let mut accumulated_result: u64 = dices.iter().fold(0, |acc, x| acc + x.0);
 		for result in dices {
 			dbgprintln!("{}: {}", result.1, result.0);
-			accumulated_result += result.0;
 		}
 
 		dbgprintln!(
@@ -297,29 +258,16 @@ fn roll_colored_dice(
 		);
 	} else {
 		// Use multiselect...
-		for (_index, dice) in colored_dice.dices.iter().enumerate() {
-			possibilities.push(&*dice.long);
-		}
-
-		let selection = {
-			let sel = MultiSelect::new()
+		possibilities = colored_dice.dices.iter().map(|x| x.long.as_str()).collect();
+		let selection = MultiSelect::new()
 				.items(&possibilities)
-				.with_prompt(
-					"Wähle deine farbigen Würfel (Mit der Leertaste auswählen und Enter bestätigen)",
-				)
-				.interact_on(stderr);
-
-			match sel {
-				Ok(sel) => sel,
-				Err(_err) => vec![]
-			}
-		};
-
+				.with_prompt("Wähle deine farbigen Würfel (Mit der Leertaste auswählen und Enter bestätigen)")
+				.interact_on(stderr)
+			.unwrap_or_else(|_err| vec![]);
 		if selection.is_empty() {
 			dbgprintln!("Nichts gewählt.");
 			return Ok(());
 		}
-
 
 		let mut result: Vec<(&String, u64)> = Vec::with_capacity(selection.len());
 		let mut accumulated_amount: u64 = 0;
@@ -332,7 +280,7 @@ fn roll_colored_dice(
 			// Amount but shorter
 			let mut am: u64 = 0;
 			for _ in 0..amount {
-				am += *(sel.roll()) as u64;
+				am += *(sel.roll(use_hw_rng)) as u64;
 			}
 			accumulated_amount += am;
 			result.push((&sel.long, am))
@@ -377,7 +325,8 @@ fn main() -> io::Result<()> {
 	let number_instead = matches.get_flag("number instead") || preferences.number_instead;
 	let no_tutorial = matches.get_flag("no tutorial") || preferences.no_tutorial;
 	let no_summary_message = matches.get_flag("no summary message") || preferences.no_summary_message;
-
+	let use_hw_rng = matches.get_flag("hwrng");
+	
 	#[cfg(debug_assertions)]
 	let error_message = format!(
 		"{} {}: Nur Zahlen sind erlaubt! Maximal {}",
@@ -421,48 +370,30 @@ fn main() -> io::Result<()> {
 	];
 
 	while !finished {
-		let selection = {
-			let sel = Select::new().items(&items).default(1).interact_opt();
-			match sel {
-				Ok(s) => s,
-				Err(_) => None
-			}
-		};
+		let selection = Select::new().items(&items).default(1).interact_opt().unwrap_or_else(|_| None);
 
 		if selection == None {
 			finished = true;
 			continue;
 		}
 
-		let answer = {
-			match selection {
-				None => {
-					continue
-				}
-				Some(sel) => {
-					match items.get(sel) {
-						Some(sel) => *sel,
-						None => {
-							continue
-						}
-					}
-				}
+		let answer = match selection.and_then(|sel| items.get(sel)) {
+			None => {
+				continue
+			}
+			Some(sel) => {
+				*sel
 			}
 		};
 
 		if answer == "Farbiger Würfel" {
-			match roll_colored_dice(
+			roll_colored_dice(
 				&colored_dice,
 				error_message.as_str(),
 				number_instead,
 				&stderr,
-			) {
-				Ok(_) => {}
-				Err(err) => {
-					eprintln!("{}", err);
-					exit(-1);
-				}
-			}
+				use_hw_rng,
+			).unwrap_or_else(|e| eprintln!("{}", e));
 		} else if answer == "Hilfe" {
 			let h = match "h".parse() {
 				Ok(res) => res,
@@ -478,6 +409,7 @@ fn main() -> io::Result<()> {
 				&normal_dices,
 				error_message.as_str(),
 				no_summary_message,
+				use_hw_rng
 			);
 		} else if answer == "Crit" {
 			let input = Input::new()
@@ -515,51 +447,36 @@ fn main() -> io::Result<()> {
 					continue;
 				}
 			};
-			crits.roll(count);
+			crits.roll(count, use_hw_rng);
 		} else if answer == "Verlassen" {
 			finished = true;
 		} else if answer == "Zerfallsreihen" {
 			decay_series(&stdout, &operation);
 		} else if answer == "Random Zauber" {
-			let string: String = match "Kampfzauber".parse() {
-				Ok(str) => str,
-				Err(err) => {
-					edbgprintln!("{}", err);
-					continue
-				}
-			};
+			let string: String = "Kampfzauber".into();
 			let items: Vec<String> = spells.iter().map(|x| x.name.clone()).collect();
-			let default = match items.iter().position(|x| x.clone() == string) {
-				None => 0,
-				Some(index) => index,
-			};
+			let default = items.iter().position(|x| x.clone() == string).unwrap_or(0);
 
-			let selection = {
-				let interact_res = Select::new()
+			let selection = Select::new()
 					.items(&items)
 					.default(default)
-					.interact_opt();
-
-				match interact_res {
-					Ok(res) => res,
-					Err(_) => None
-				}
-			};
+					.interact_opt()
+					.unwrap_or(None);
 
 			match selection	{
 				None => continue,
-				Some(index) => dbgprintln!("{}", spells[index].roll()),
+				Some(index) => dbgprintln!("{}", spells[index].roll(use_hw_rng)),
 			}
 		} else if answer == "Random Nachteil" {
 			let rando = disadvantage::get_random(&disadvantages);
 			dbgprintln!("{}", rando);
 		} else {
-			dbgprint!("Seitenanzahl: ");
-			if stdout.flush().is_err() {
-				exit(-1)
-			}
-
 			if no_dice_select {
+				dbgprint!("Seitenanzahl: ");
+				if stdout.flush().is_err() {
+					exit(-1)
+				}
+				
 				let mut input = String::new();
 				match stdin.read_line(&mut input) {
 					Ok(_n) => {
@@ -572,6 +489,7 @@ fn main() -> io::Result<()> {
 							&normal_dices,
 							error_message.as_str(),
 							no_summary_message,
+							use_hw_rng
 						);
 					}
 					Err(error) => edbgprintln!("error: {}", error),
@@ -582,16 +500,11 @@ fn main() -> io::Result<()> {
 					dice_items.push(allowed_dice_site.to_string())
 				}
 
-				let selection = {
-					let interact_res = Select::new()
+				let selection = Select::new()
 						.items(&dice_items)
 						.default(3)
-						.interact_on_opt(&Term::stderr());
-					match interact_res {
-						Ok(res) => res,
-						Err(_) => None
-					}
-				};
+						.interact_on_opt(&Term::stderr())
+						.unwrap_or(None);
 				if selection == None {
 					continue;
 				}
@@ -610,6 +523,7 @@ fn main() -> io::Result<()> {
 					&normal_dices,
 					error_message.as_str(),
 					no_summary_message,
+					use_hw_rng
 				);
 			}
 		}

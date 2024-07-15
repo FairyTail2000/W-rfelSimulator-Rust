@@ -23,12 +23,15 @@ pub struct Level {
 
 impl Display for Level {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		let up = if let Some(upper) = self.upper {
-			upper.to_string()
-		} else {
-			"Keine Begrenzung".parse().unwrap()
-		};
-		write!(f, "Level {} - {}", self.lower, up)
+		match self.upper {
+			None => {
+				write!(f, "Level {} - {}", self.lower, "Keine Begrenzung")
+			}
+			Some(upper) => {
+				write!(f, "Level {} - {}", self.lower, upper)
+
+			}
+		}
 	}
 }
 
@@ -90,8 +93,15 @@ impl Level {
 }
 
 impl Rollable<u8> for CritDice {
-    fn roll(&self) -> &u8 {
-        &self.values[random_usize(0, self.values.len() - 1)]
+    fn roll(&self, use_hw_rng: bool) -> &u8 {
+		// Performance of the hw rng should be okay for this use case since it's not expected to be more than 10 roles at a time
+		let index = if use_hw_rng {
+			// Fall back on software rng if hardware rng is not available or failing
+			random().unwrap_or_else(|| random_usize(1, self.values.len() - 1) as u64) as usize % self.values.len()
+		} else {
+			random_usize(1, self.values.len() - 1)
+		};
+        &self.values[index]
     }
 }
 
@@ -129,7 +139,7 @@ impl Loadable<CritDices> for CritDices {
 }
 
 impl CritDices {
-	pub fn roll(&self, value: i16) {
+	pub fn roll(&self, value: i16, use_hw_rng: bool) {
 		let levels: Vec<(Level, bool)> = self
 			.level
 			.iter()
@@ -147,7 +157,7 @@ impl CritDices {
 				}
 			}
 		}
-		let mut results: Vec<u8> = stack.iter_mut().map(|x| *x.roll()).collect();
+		let mut results: Vec<u8> = stack.iter_mut().map(|x| *x.roll(use_hw_rng)).collect();
 		let mut s_counter: u8 = 0;
 		let counter: u8 = results
 			.iter_mut()
@@ -162,9 +172,7 @@ impl CritDices {
 			.sum();
 		dbgprintln!("Folgende Level haben crits:");
 		levels.iter().for_each(|x| {
-			if x.1 {
-				dbgprintln!("Level: {}", x.0);
-			}
+			dbgprintln!("Level: {}", x.0);
 		});
 		dbgprintln!("S: {}", s_counter);
 		dbgprintln!("Blitze: {}", counter);

@@ -1,5 +1,5 @@
 use ansi_term::Colour;
-use common::{settings_path, Loadable, Rollable};
+use common::{settings_path, Loadable, Rollable, random};
 use common::macros::dbgprintln;
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
@@ -116,9 +116,16 @@ impl Loadable<Self> for ColoredDices {
 }
 
 impl Rollable<u8> for ColoredDice {
-    fn roll(&self) -> &u8 {
+    fn roll(&self, use_hw_rng: bool) -> &u8 {
+		let size = if use_hw_rng {
+			// Fall back on software rng if hardware rng is not available or failing
+			random().unwrap_or_else(|| random_usize(1, self.sites.len() - 1) as u64) as usize % self.sites.len()
+		} else {
+			random_usize(1, self.sites.len() - 1)
+		};
+
         self.sites
-            .get(random_usize(1, self.sites.len() - 1))
+            .get(size)
             .unwrap()
     }
 }

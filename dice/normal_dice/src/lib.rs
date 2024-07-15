@@ -1,5 +1,5 @@
 use ansi_term::Colour;
-use common::{settings_path, Loadable};
+use common::{settings_path, Loadable, random, ToByteArray};
 use common::macros::dbgprintln;
 use random_integer::random_u8;
 use serde::{Deserialize, Serialize};
@@ -105,6 +105,35 @@ pub fn roll(amount: usize, sides: u8) -> Results {
 	results
 }
 
+pub fn roll_native(amount: usize, sides: u8) -> Option<Results> {
+	let mut results = Results {
+		data: Vec::with_capacity(amount),
+		sides,
+		count: amount as u64,
+	};
+	// 8 is the maximum amount of random numbers that can be generated at once
+	// 1 more is added to make sure that the amount of random numbers is enough
+	for _ in 0..(amount/8+1) {
+		// Collect the random numbers until the amount is reached
+		match random() {
+			Some(value) => {
+				results.data.extend(value.to_byte_array())
+			},
+			None => {
+				return None;
+			}
+		};
+		if results.data.len() >= amount {
+			results.data.truncate(amount);
+			break;
+		}
+	}
+	// Map the random numbers to the dice sides
+	results.data = results.data.iter().map(|x| x % sides + 1).collect();
+
+	Some(results)
+}
+
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dices {
 	pub dices: Vec<u8>,
@@ -154,5 +183,30 @@ impl Loadable<Self> for Dices {
 impl Dices {
 	pub fn len(&self) -> usize {
 		return self.dices.len();
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::{roll, roll_native};
+
+	#[test]
+	fn test_roll() {
+		let results = roll(100, 6);
+		assert_eq!(results.data.len(), 100);
+		for result in results.data {
+			assert!(result >= 1 && result <= 6);
+		}
+	}
+
+	#[test]
+	fn test_roll_native() {
+		let results = roll_native(100, 6);
+		assert!(results.is_some(), "Failed to generate random numbers");
+		let results = results.unwrap();
+		assert_eq!(results.data.len(), 100);
+		for result in results.data {
+			assert!(result >= 1 && result <= 6);
+		}
 	}
 }

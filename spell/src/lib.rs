@@ -1,9 +1,10 @@
-use common::{settings_path, Loadable, Rollable};
+use common::{settings_path, Loadable, Rollable, random};
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
+use common::macros::edbgprintln;
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize, Hash, Debug)]
 pub struct Spells {
@@ -112,7 +113,7 @@ impl Loadable<Vec<Spells>> for Spells {
 			match serde_yaml::from_reader::<BufReader<File>, Vec<Spells>>(buf_reader) {
 				Ok(spells) => spells,
 				Err(err) => {
-					eprintln!("{}", err);
+					edbgprintln!("{}", err);
 					let file = OpenOptions::new()
 						.write(true)
 						.truncate(true)
@@ -122,8 +123,8 @@ impl Loadable<Vec<Spells>> for Spells {
 					match serde_yaml::to_writer(writer, &Spells::defaults()) {
 						Ok(_) => {}
 						Err(err) => {
-							eprintln!("Couldn't default values to file");
-							eprintln!("{}", err);
+							edbgprintln!("Couldn't default values to file");
+							edbgprintln!("{}", err);
 						}
 					}
 					Spells::defaults()
@@ -136,7 +137,14 @@ impl Loadable<Vec<Spells>> for Spells {
 }
 
 impl Rollable<String> for Spells  {
-    fn roll(&self) -> &String {
-        &self.spells[random_usize(0, self.spells.len() - 1)]
+    fn roll(&self, use_hw_rng: bool) -> &String {
+		// Performance of the hw rng should be okay for this use case since it's not expected to be called more than once at a time
+		let index = if use_hw_rng {
+			// Fall back on software rng if hardware rng is not available or failing
+			random().unwrap_or_else(|| random_usize(1, self.spells.len() - 1) as u64) as usize % self.spells.len()
+		} else {
+			random_usize(1, self.spells.len() - 1)
+		};
+        &self.spells[index]
     }
 }
