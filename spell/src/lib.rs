@@ -13,7 +13,7 @@ pub struct Spells {
 
 impl Spells {
 	pub fn defaults() -> Vec<Spells> {
-		return vec![
+		vec![
 			Spells {
 				name: "Projektionszauber".parse().unwrap(),
 				spells: vec![
@@ -98,7 +98,7 @@ impl Spells {
 					"Windhose".parse().unwrap(),
 				],
 			},
-		];
+		]
 	}
 }
 

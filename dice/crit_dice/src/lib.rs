@@ -23,11 +23,9 @@ pub struct Level {
 
 impl Display for Level {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		let up = if let Some(upper) = self.upper {
-			upper.to_string()
-		} else {
-			"Keine Begrenzung".parse().unwrap()
-		};
+		let up = self.upper
+			.and_then(|val| Some(val.to_string()))
+			.unwrap_or_else(|| "Keine Begrenzung".to_string());
 		write!(f, "Level {} - {}", self.lower, up)
 	}
 }
@@ -41,7 +39,7 @@ pub struct CritDices {
 
 impl Default for CritDices {
 	fn default() -> Self {
-		return CritDices {
+		CritDices {
 			level: vec![
 				Level {
 					lower: 0,
@@ -78,14 +76,14 @@ impl Default for CritDices {
 				},
 			],
 			s: 4,
-		};
+		}
 	}
 }
 
 impl Level {
 	fn works(&self) -> bool {
-		let ran: f32 = random!(..=100f32);
-		self.percentage > ran
+		let random_value: f32 = random!(..=100f32);
+		self.percentage > random_value
 	}
 }
 
@@ -130,36 +128,27 @@ impl Loadable<CritDices> for CritDices {
 
 impl CritDices {
 	pub fn roll(&self, value: i16) {
-		let levels: Vec<(Level, bool)> = self
+		let levels: Vec<(&Level, bool)> = self
 			.level
 			.iter()
-			.map(|x| (x.clone(), x.works()))
+			.map(|x| (x, x.works()))
 			.filter(|x| x.1)
 			.collect();
-		let mut stack: Vec<CritDice> = Vec::with_capacity(10);
+		let mut stack: Vec<&CritDice> = Vec::with_capacity(10);
 		let mut counter: i16 = value;
 		while counter != 0 {
 			for item in self.dices.iter() {
 				if counter - item.value as i16 > -1 {
-					stack.push(item.clone());
+					stack.push(item);
 					counter -= item.value as i16;
 					break;
 				}
 			}
 		}
-		let mut results: Vec<u8> = stack.iter_mut().map(|x| *x.roll()).collect();
-		let mut s_counter: u8 = 0;
-		let counter: u8 = results
-			.iter_mut()
-			.map(|x| {
-				if *x == self.s {
-					s_counter += 1;
-					0
-				} else {
-					*x
-				}
-			})
-			.sum();
+		let results: Vec<u8> = stack.iter_mut().map(|x| *x.roll()).collect();
+		// How many "S" where found in the "rolled" dices
+		let s_counter = results.iter().filter(|x| **x == self.s).count();
+		let counter: u8 = results.into_iter().filter(|x| *x != self.s).sum();
 		dbgprintln!("Folgende Level haben crits:");
 		levels.iter().for_each(|x| {
 			if x.1 {

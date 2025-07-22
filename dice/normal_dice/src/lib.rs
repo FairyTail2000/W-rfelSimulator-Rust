@@ -1,12 +1,13 @@
+use std::error::Error;
 use ansi_term::Colour;
 use common::{settings_path, Loadable};
 use common::macros::dbgprintln;
 use random_integer::random_u8;
-use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 use std::vec::Vec;
+use serde::{Deserialize, Serialize};
 
 const NORMAL_DICES_FILE: &str = "normal.yaml";
 
@@ -59,10 +60,7 @@ impl Results {
 			); // 4 + 5 + 6
 			dbgprintln!("Erfolge: {}", accumulated[4] + accumulated[5]); // 5 + 6
 		} else {
-			let mut sum: u64 = 0;
-			for number in &self.data {
-				sum += *number as u64;
-			}
+			let sum: u64 = self.data.iter().map(|x| *x as u64).sum();
 
 			if old_style {
 				for (index, result) in self.data.iter().enumerate() {
@@ -94,15 +92,11 @@ impl Results {
 }
 
 pub fn roll(amount: usize, sides: u8) -> Results {
-	let mut results = Results {
-		data: Vec::with_capacity(amount),
+	Results {
+		data: (0..amount).map(|_| random_u8(1, sides)).collect(),
 		sides,
 		count: amount as u64,
-	};
-	for _ in 0..amount {
-		results.data.push(random_u8(1, sides))
 	}
-	results
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -112,47 +106,62 @@ pub struct Dices {
 
 impl Default for Dices {
 	fn default() -> Self {
-		return Dices {
+		Dices {
 			dices: vec![2, 3, 4, 6, 8, 10, 20, 100],
-		};
+		}
 	}
 }
 
 impl Loadable<Self> for Dices {
 	fn load(file: Option<&str>) -> Self {
-		let alt = settings_path(NORMAL_DICES_FILE);
-		let file_name = file.unwrap_or(alt.to_str().unwrap());
-
-		if Path::new(file_name).exists() {
-			let file = File::open(file_name).unwrap();
-			let buf_reader = BufReader::new(file);
-			serde_yaml::from_reader::<BufReader<File>, Dices>(buf_reader)
-				.unwrap_or(Dices::default())
-		} else {
-			match File::create(file_name) {
-				Ok(file) => {
-					let writer = BufWriter::new(file);
-					match serde_yaml::to_writer::<BufWriter<File>, Dices>(writer, &Dices::default())
-					{
-						Ok(_) => {
-							dbgprintln!("Neue Würfel wurden erzeugt");
-						}
-						Err(err) => {
-							dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
-						}
-					}
+		let default_path = settings_path(NORMAL_DICES_FILE);
+		let file_name = file
+			.map_or(default_path, |s| Path::new(s).to_path_buf())
+			.to_string_lossy()
+			.to_string();
+		let path = Path::new(&file_name);
+		Dices::load_from_path(path)
+			.unwrap_or_else(|e| {
+				dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(format!("Error loading dices: {}. Attempting to create default.", e)));
+				let default_dices = Dices::default();
+				let save_result = default_dices.save_to_path(path);
+				match save_result {
+					Ok(_) => dbgprintln!("New default dices created at: {}", path.display()),
+					Err(err) => dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(format!("Error creating or saving default dices: {}", err)))
 				}
-				Err(err) => {
-					dbgprintln!("{}", Colour::RGB(255, 0, 0).paint(err.to_string()));
-				}
-			}
-			Dices::default()
-		}
+				default_dices
+			})
 	}
 }
 
 impl Dices {
 	pub fn len(&self) -> usize {
-		return self.dices.len();
+		self.dices.len()
+	}
+
+	fn load_from_path(path: &Path) -> Result<Self, Box<dyn Error>> {
+		if !path.exists() {
+			return Err("File does not exist".into());
+		}
+
+		let file = File::open(path)?;
+		let buf_reader = BufReader::new(file);
+		let dices = serde_yaml::from_reader(buf_reader)?;
+		Ok(dices)
+	}
+
+	fn save_to_path(&self, path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+		if let Some(parent) = path.parent() {
+			std::fs::create_dir_all(parent)?;
+		}
+
+		let file = OpenOptions::new()
+			.write(true)
+			.create(true)
+			.truncate(true)
+			.open(path)?;
+		let writer = BufWriter::new(file);
+		serde_yaml::to_writer(writer, self)?;
+		Ok(())
 	}
 }

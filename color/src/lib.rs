@@ -34,7 +34,6 @@ mod tests {
 use ansi_term::Colour;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::num::ParseIntError;
 
 #[derive(Debug)]
 pub struct HexDecodeError {
@@ -49,35 +48,22 @@ impl Display for HexDecodeError {
 
 impl Error for HexDecodeError {}
 
-pub fn get_color(hexval: &str) -> Result<Colour, Box<dyn Error>> {
+pub fn get_color(hexval: &str) -> Result<Colour, HexDecodeError> {
     let new_hexval = hexval.replace("#", "");
     if new_hexval.len() != 3 && new_hexval.len() != 6 {
-        return Err(Box::from(HexDecodeError {
+        return Err(HexDecodeError {
             msg: format!(
                 "Invalid hexval length: {}, must be 3 or 6",
                 new_hexval.len()
             ),
-        }));
+        });
     }
 
-    let parse: Vec<Result<u8, ParseIntError>> = new_hexval
-        .chars()
-        .map(|val| u8::from_str_radix(&*val.to_string(), 16))
-        .collect();
-
-    let mut values = Vec::with_capacity(parse.len());
-    for element in parse.iter() {
-        match element {
-            Ok(val) => {
-                values.push(*val);
-            }
-            Err(e) => {
-                return Err(Box::new(HexDecodeError {
-                    msg: format!("{}", e),
-                }))
-            }
-        }
-    }
+    let values = new_hexval
+        .split("")
+        .filter(|&s| !s.is_empty())
+        .map(|s| u8::from_str_radix(s, 16).map_err(|err| HexDecodeError { msg: err.to_string() }))
+        .collect::<Result<Vec<u8>, HexDecodeError>>()?;
 
     let r: u8;
     let g: u8;
@@ -93,5 +79,5 @@ pub fn get_color(hexval: &str) -> Result<Colour, Box<dyn Error>> {
         b = values[4] << 4 | values[5];
     }
 
-    return Ok(Colour::RGB(r, g, b));
+    Ok(Colour::RGB(r, g, b))
 }
