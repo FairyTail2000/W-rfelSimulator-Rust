@@ -9,27 +9,3 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
-  - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/color/" # Location of package manifests
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/common/" # Location of package manifests
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/dice/" # Location of package manifests
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/disadvantage/" # Location of package manifests
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/spell/" # Location of package manifests
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/decay_series/" # Location of package manifests
-    schedule:
-      interval: "daily"
