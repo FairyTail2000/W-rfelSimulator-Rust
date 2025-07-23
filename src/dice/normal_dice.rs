@@ -1,13 +1,13 @@
 use std::error::Error;
 use ansi_term::Colour;
-use common::{settings_path, Loadable};
-use common::macros::dbgprintln;
+use crate::common::{settings_path, Loadable};
 use random_integer::random_u8;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 use std::vec::Vec;
 use serde::{Deserialize, Serialize};
+use crate::dbgprintln;
 
 const NORMAL_DICES_FILE: &str = "normal.yaml";
 
@@ -135,10 +135,6 @@ impl Loadable<Self> for Dices {
 }
 
 impl Dices {
-	pub fn len(&self) -> usize {
-		self.dices.len()
-	}
-
 	fn load_from_path(path: &Path) -> Result<Self, Box<dyn Error>> {
 		if !path.exists() {
 			return Err("File does not exist".into());

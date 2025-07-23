@@ -1,6 +1,6 @@
 use ansi_term::Colour;
-use common::{settings_path, Loadable, Rollable};
-use common::macros::dbgprintln;
+use crate::common::{settings_path, Loadable, Rollable};
+use crate::dbgprintln;
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
@@ -101,10 +101,4 @@ impl Rollable<u8> for ColoredDice {
             .get(random_usize(0, self.sites.len() - 1))
             .unwrap()
     }
-}
-
-impl ColoredDices {
-	pub fn len(&self) -> usize {
-		self.dices.len()
-	}
 }

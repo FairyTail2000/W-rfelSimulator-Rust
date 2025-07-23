@@ -2,8 +2,7 @@ use directories::ProjectDirs;
 use std::fs::create_dir_all;
 use std::path::{PathBuf, MAIN_SEPARATOR};
 use std::process::exit;
-
-pub use macros;
+use crate::dbgprintln;
 
 pub fn settings_path(file: &str) -> PathBuf {
 	let dir = match ProjectDirs::from("", "", "würfeln") {
@@ -27,7 +26,7 @@ pub fn settings_path(file: &str) -> PathBuf {
 		}
 	};
 
-    macros::dbgprintln!("Loading from file: {}", dir.to_str().unwrap());
+    dbgprintln!("Loading from file: {}", dir.to_str().unwrap());
 
 	dir
 }

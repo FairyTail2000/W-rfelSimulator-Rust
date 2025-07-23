@@ -1,5 +1,5 @@
-use common::{settings_path, Loadable, Rollable};
-use common::macros::dbgprintln;
+use crate::common::{settings_path, Loadable, Rollable};
+use crate::dbgprintln;
 use random_integer::random_usize;
 use random_number::random;
 use serde::{Deserialize, Serialize};

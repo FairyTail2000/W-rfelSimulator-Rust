@@ -1,4 +1,4 @@
-use common::{settings_path, Loadable};
+use crate::common::{settings_path, Loadable};
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};

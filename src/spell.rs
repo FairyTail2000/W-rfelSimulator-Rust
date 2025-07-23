@@ -1,4 +1,4 @@
-use common::{settings_path, Loadable, Rollable};
+use crate::common::{settings_path, Loadable, Rollable};
 use random_integer::random_usize;
 use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};

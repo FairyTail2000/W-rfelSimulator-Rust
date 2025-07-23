@@ -1,4 +1,10 @@
 mod preferences;
+mod color;
+mod dice;
+mod spell;
+mod disadvantage;
+mod decay_series;
+mod common;
 
 use color::get_color;
 use crate::preferences::Settings;
@@ -8,16 +14,14 @@ use common::{Loadable, Rollable};
 use dice::crit_dice::CritDices;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
-use common::macros::{dbgprint, dbgprintln, edbgprintln};
 use disadvantage::Disadvantage;
 use dice::normal_dice::Dices;
 use std::io;
 use std::io::Write;
-use std::ops::Deref;
 #[cfg(debug_assertions)]
 use std::time::SystemTime;
 use spell::Spells;
-use decay_series::operation::Operation;
+use decay_series::Operation;
 use decay_series::State;
 
 /**
