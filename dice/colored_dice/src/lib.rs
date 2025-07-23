@@ -9,7 +9,7 @@ use std::path::Path;
 
 const COLORED_DICES_FILE: &str = "colored.yaml";
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ColoredDice {
 	pub long: String,
 	pub short: char,
@@ -18,29 +18,9 @@ pub struct ColoredDice {
 	pub color: String,
 }
 
-impl Clone for ColoredDice {
-	fn clone(&self) -> Self {
-		ColoredDice {
-			long: self.long.to_string(),
-			short: self.short.clone(),
-			sites: self.sites.clone(),
-			value: self.value.clone(),
-			color: self.color.clone(),
-		}
-	}
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ColoredDices {
 	pub dices: Vec<ColoredDice>,
-}
-
-impl Clone for ColoredDices {
-	fn clone(&self) -> Self {
-		ColoredDices {
-			dices: self.dices.to_vec(),
-		}
-	}
 }
 
 impl Default for ColoredDices {
@@ -118,7 +98,7 @@ impl Loadable<Self> for ColoredDices {
 impl Rollable<u8> for ColoredDice {
     fn roll(&self) -> &u8 {
         self.sites
-            .get(random_usize(1, self.sites.len() - 1))
+            .get(random_usize(0, self.sites.len() - 1))
             .unwrap()
     }
 }
