@@ -196,7 +196,7 @@ impl From<String> for State {
         let parts: Vec<i64> = string
             .split(";")
             .into_iter()
-            .map(|val| i64::from_str_radix(val, 10).unwrap())
+            .filter_map(|val| i64::from_str_radix(val, 10).ok())
             .collect();
         if parts.len() != 3 {
             panic!("Invalid number of parts: {}", parts.len());
@@ -215,7 +215,7 @@ impl From<&str> for State {
         let parts: Vec<i64> = string
             .split(";")
             .into_iter()
-            .map(|val| i64::from_str_radix(val, 10).unwrap())
+            .filter_map(|val| i64::from_str_radix(val, 10).ok())
             .collect();
         if parts.len() != 3 {
             panic!("Invalid number of parts: {}", parts.len());

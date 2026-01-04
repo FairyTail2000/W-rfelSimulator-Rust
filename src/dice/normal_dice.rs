@@ -1,11 +1,12 @@
 use std::error::Error;
 use ansi_term::Colour;
 use crate::common::{settings_path, Loadable};
-use random_integer::random_u8;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 use std::vec::Vec;
+use rand::Rng;
+use rand::distr::Uniform;
 use serde::{Deserialize, Serialize};
 use crate::dbgprintln;
 
@@ -91,9 +92,10 @@ impl Results {
 	}
 }
 
-pub fn roll(amount: usize, sides: u8) -> Results {
+pub fn roll(amount: usize, sides: u8, rng: &mut impl Rng) -> Results {
+	let distribution = Uniform::<u8>::new_inclusive(1, sides).expect("Failed to create uniform distribution");
 	Results {
-		data: (0..amount).map(|_| random_u8(1, sides)).collect(),
+		data: (0..amount).map(|_| rng.sample(&distribution)).collect(),
 		sides,
 		count: amount as u64,
 	}

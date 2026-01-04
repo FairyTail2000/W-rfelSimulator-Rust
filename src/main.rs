@@ -23,6 +23,10 @@ use std::time::SystemTime;
 use spell::Spells;
 use decay_series::Operation;
 use decay_series::State;
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::_rdseed64_step;
+use rand::rngs::SmallRng;
+use rand::{Rng, SeedableRng};
 
 /**
  * Prints basic information's about the usage of the program
@@ -54,12 +58,13 @@ fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice
 }
 
 fn handle_input(
-	input: String,
+	input: &str,
 	old_report_style: bool,
 	allowed_colored_dices: &ColoredDices,
 	allowed_dice_sites: &Dices,
 	error_message: &str,
 	no_summary: bool,
+	rng: &mut impl Rng
 ) -> bool {
 	if input == "exit" || input == "e" {
 		true
@@ -73,7 +78,7 @@ fn handle_input(
 		} else if let Ok(sides) = parsed {
 			if allowed_dice_sites.dices.contains(&sides) {
 				let amount = ask_for_amount(error_message, "Anzahl");
-				let res = dice::normal_dice::roll(amount, sides);
+				let res = dice::normal_dice::roll(amount, sides, rng);
 				res.print_results(old_report_style, no_summary);
 			} else {
 				dbgprintln!("Die ist nicht erlaubt...")
@@ -208,6 +213,7 @@ fn roll_colored_dice(
 	error_message: &str,
 	number_instead: bool,
 	stderr: &Term,
+	rng: &mut impl Rng
 ) -> io::Result<()> {
 	if number_instead {
 		//Input a number and auto compute values
@@ -216,22 +222,22 @@ fn roll_colored_dice(
 		let mut dices: Vec<(u64, String)> = Vec::with_capacity(amount);
 		let mut remaining = amount;
 
-		let mut copy: Vec<ColoredDice> = colored_dice.dices.to_vec();
+		let mut copied_dices: Vec<ColoredDice> = colored_dice.dices.to_vec();
 
-		copy.sort_by(|a, b| a.value.cmp(&b.value).reverse());
-		for dice in copy {
-			let mut result: u64 = 0;
-			for _ in 0..remaining / dice.value as usize {
-				result += *dice.roll() as u64;
-			}
+		copied_dices.sort_by(|a, b| a.value.cmp(&b.value).reverse());
+		for dice in copied_dices {
+			let result: u64 = (0..remaining / dice.value as usize)
+				.map(|_| dice.roll(rng) as u64)
+				.sum();
 			dices.push((result, dice.long));
 			remaining %= dice.value as usize;
 		}
 
-		let mut accumulated_result: u64 = 0;
+		let accumulated_result: u64 = dices.iter()
+			.map(|x| x.0)
+			.sum();
 		for result in dices {
 			dbgprintln!("{}: {}", result.1, result.0);
-			accumulated_result += result.0;
 		}
 
 		dbgprintln!(
@@ -262,7 +268,7 @@ fn roll_colored_dice(
 			.map(|dice| (dice, ask_for_amount(error_message, &*format!("Anzahl {}", dice.long))));
 		for (dice, amount) in selection {
 			let amount = (0..amount)
-				.map(|_| *dice.roll() as u64)
+				.map(|_| dice.roll(rng) as u64)
 				.sum();
 			accumulated_amount += amount;
 			result.push((&dice.long, amount))
@@ -302,6 +308,21 @@ fn main() -> io::Result<()> {
 		Err(err) => edbgprintln!("{}", err)
 	}
 
+	let mut rng = {
+		let mut seed_value= 0;
+		#[cfg(target_arch = "x86_64")]
+		if is_x86_feature_detected!("rdseed") {
+			unsafe { _rdseed64_step(&mut seed_value); }
+		}
+
+		// rdseed failed (or this is not an x86-64 system, result is 0 also in bad systems that return success on failure (AMD)
+		if seed_value == 0 {
+			// C style initialization
+			seed_value = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos() as u64;
+		}
+		SmallRng::seed_from_u64(seed_value)
+	};
+
 	let old = matches.get_flag("old_style") || preferences.old_style;
 	let no_dice_select = matches.get_flag("no select dice select") || preferences.no_select_dice_select;
 	let number_instead = matches.get_flag("number instead") || preferences.number_instead;
@@ -319,17 +340,15 @@ fn main() -> io::Result<()> {
 	let error_message = format!("Nur Zahlen sind erlaubt! Maximal {}", u64::MAX);
 
 	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}\n", preferences);
-	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}\n", colored_dice);
-	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}\n", normal_dices);
-	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}\n", operation);
-	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}\n", spells);
-	#[cfg(debug_assertions)]
-	dbgprintln!("{:?}\n", disadvantages);
+	{
+		dbgprintln!("{:?}\n", preferences);
+		dbgprintln!("{:?}\n", colored_dice);
+		dbgprintln!("{:?}\n", normal_dices);
+		dbgprintln!("{:?}\n", operation);
+		dbgprintln!("{:?}\n", spells);
+		dbgprintln!("{:?}\n", disadvantages);
+
+	}
 
 	let mut finished = false;
 	if !no_tutorial {
@@ -355,122 +374,135 @@ fn main() -> io::Result<()> {
 				.items(&items)
 				.default(1)
 				.interact_opt()
-				.unwrap_or_else(|_| None);
+				.ok()
+				.flatten()
+				.and_then(|sel| items.get(sel))
+				.copied();
 
-		if selection == None {
-			finished = true;
-			continue;
-		}
-
-		let answer = match selection.and_then(|sel| items.get(sel)) {
-			Some(sel) => *sel,
-			None => continue
+		let answer = match selection {
+			Some(answer) => answer,
+			None => {
+				finished = true;
+				continue;
+			}
 		};
 
-		if answer == "Farbiger Würfel" {
-			if let Err(err) = roll_colored_dice(
-				&colored_dice,
-				error_message.as_str(),
-				number_instead,
-				&stderr,
-			) {
-				edbgprintln!("{}", err);
-				continue
-			}
-		} else if answer == "Hilfe" {
-			let h = "h".to_string();
-			finished = handle_input(
-				h,
-				old,
-				&colored_dice,
-				&normal_dices,
-				error_message.as_str(),
-				no_summary_message,
-			);
-		} else if answer == "Crit" {
-			let input = Input::new()
-				.with_prompt("Anzahl")
-				.validate_with(|input: &String| -> Result<(), &str> {
-					let new_val = input.trim();
-					if new_val.is_empty() {
-						return Err("Bitte etwas eingeben");
-					}
+		match answer {
+			"Farbiger Würfel" => {
+				if let Err(err) = roll_colored_dice(
+					&colored_dice,
+					&error_message,
+					number_instead,
+					&stderr,
+					&mut rng,
+				) {
+					edbgprintln!("{}", err);
+					continue
+				}
+			},
+			"Hilfe" => {
+				finished = handle_input(
+					"h",
+					old,
+					&colored_dice,
+					&normal_dices,
+					&error_message,
+					no_summary_message,
+					&mut rng,
+				);
+			},
+			"Crit" => {
+				let input = Input::new()
+					.with_prompt("Anzahl")
+					.validate_with(|input: &String| -> Result<(), &str> {
+						let new_val = input.trim();
+						if new_val.is_empty() {
+							return Err("Bitte etwas eingeben");
+						}
 
-					i16::from_str_radix(new_val, 10)
-						.ok()
-						.filter(|&val| val >= 0)
-						.map(|_| ())
-						.ok_or("Bitte eine positive Ganzzahl eingeben")
-				})
-				.interact_text()
-				.map_err(|err| err.to_string())
-				.and_then(|inp| inp.parse::<i16>().map_err(|err| err.to_string()));
+						i16::from_str_radix(new_val, 10)
+							.ok()
+							.filter(|&val| val >= 0)
+							.map(|_| ())
+							.ok_or("Bitte eine positive Ganzzahl eingeben")
+					})
+					.interact_text()
+					.map_err(|err| err.to_string())
+					.and_then(|inp| inp.parse::<i16>().map_err(|err| err.to_string()));
 
-			match input {
-				Ok(count) => crits.roll(count),
-				Err(err) => eprintln!("{}", err),
-			}
-		} else if answer == "Verlassen" {
-			finished = true;
-		} else if answer == "Zerfallsreihen" {
-			decay_series(&stdout, &operation);
-		} else if answer == "Random Zauber" {
-			let search_string = "Kampfzauber";
-			let items: Vec<&str> = spells.iter().map(|x| &*x.name).collect();
-			let default = items.iter().position(|x| *x == search_string).unwrap_or_else(|| 0);
+				match input {
+					Ok(count) => crits.roll(count, &mut rng),
+					Err(err) => eprintln!("{}", err),
+				}
+			},
+			"Verlassen" => {
+				finished = true;
+			},
+			"Zerfallsreihen" => {
+				decay_series(&stdout, &operation);
+			},
+			"Random Zauber" => {
+				let search_string = "Kampfzauber";
+				let items: Vec<&str> = spells.iter().map(|x| &*x.name).collect();
+				let default = items.iter().position(|x| *x == search_string).unwrap_or_else(|| 0);
 
-			let selection = Select::new()
+				let selection = Select::new()
 					.items(&items)
 					.default(default)
 					.interact_opt()
 					.unwrap_or_else(|_| None);
 
-			if let Some(index) = selection {
-				dbgprintln!("{}", spells[index].roll())
-			}
-		} else if answer == "Random Nachteil" {
-			let rando = disadvantage::get_random(&disadvantages);
-			dbgprintln!("{}", rando);
-		} else {
-			dbgprint!("Seitenanzahl: ");
-			if let Err(err) = stdout.flush() {
-				edbgprintln!("Fehler bei der Terminal interaktion: {}", err)
-			}
-
-			if no_dice_select {
-				let mut input = String::new();
-				match stdin.read_line(&mut input) {
-					Ok(_) => {
-						// Return value determines continuation of the loop, true ends the loop, false continues it
-						finished = handle_input(
-							input.replace("\n", ""),
-							old,
-							&colored_dice,
-							&normal_dices,
-							error_message.as_str(),
-							no_summary_message,
-						);
-					}
-					Err(error) => edbgprintln!("error: {}", error),
+				if let Some(index) = selection {
+					dbgprintln!("{}", spells[index].roll(&mut rng))
 				}
-			} else {
-				let dice_items: Vec<String> = normal_dices.dices.iter().map(|x| x.to_string()).collect();
-				let selection = Select::new()
+			},
+			"Random Nachteil" => {
+				let rando = disadvantage::get_random(&disadvantages, &mut rng);
+				dbgprintln!("{}", rando);
+			},
+			_ => {
+				dbgprint!("Seitenanzahl: ");
+				if let Err(err) = stdout.flush() {
+					edbgprintln!("Fehler bei der Terminal interaktion: {}", err)
+				}
+
+				if no_dice_select {
+					let mut input = String::new();
+					match stdin.read_line(&mut input) {
+						Ok(_) => {
+							// Return value determines continuation of the loop, true ends the loop, false continues it
+							finished = handle_input(
+								&*input.replace("\n", ""),
+								old,
+								&colored_dice,
+								&normal_dices,
+								&error_message,
+								no_summary_message,
+								&mut rng,
+							);
+						}
+						Err(error) => edbgprintln!("error: {}", error),
+					}
+				} else {
+					let dice_items: Vec<String> = normal_dices.dices.iter().map(|x| x.to_string()).collect();
+					let selection = Select::new()
 						.items(&dice_items)
 						.default(3)
 						.interact_on_opt(&Term::stderr())
 						.unwrap_or_else(|_| None)
 						.and_then(|index| dice_items.get(index));
 
-				if let Some(input) = selection {
-					finished = handle_input(
-						input.to_string(),
-						old,
-						&colored_dice,
-						&normal_dices,
-						error_message.as_str(),
-						no_summary_message,
-					);
+					if let Some(input) = selection {
+						finished = handle_input(
+							input,
+							old,
+							&colored_dice,
+							&normal_dices,
+							error_message.as_str(),
+							no_summary_message,
+							&mut rng,
+						);
+					}
 				}
 			}
 		}

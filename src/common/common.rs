@@ -2,6 +2,7 @@ use directories::ProjectDirs;
 use std::fs::create_dir_all;
 use std::path::{PathBuf, MAIN_SEPARATOR};
 use std::process::exit;
+use rand::Rng;
 use crate::dbgprintln;
 
 pub fn settings_path(file: &str) -> PathBuf {
@@ -36,5 +37,5 @@ pub trait Loadable<T> {
 }
 
 pub trait Rollable<T> {
-    fn roll(&self) -> &T;
+    fn roll(&self, rng: &mut impl Rng) -> T;
 }

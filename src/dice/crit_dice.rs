@@ -1,18 +1,38 @@
 use crate::common::{settings_path, Loadable, Rollable};
 use crate::dbgprintln;
-use random_integer::random_usize;
-use random_number::random;
+use rand::Rng;
+use rand::distr::Uniform;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
-#[derive(Eq, PartialEq, Serialize, Deserialize, Debug, Ord, PartialOrd, Copy, Clone, Hash)]
+#[derive(Eq, PartialEq, Serialize, Deserialize, Debug, Copy, Clone)]
+#[serde(from = "RawCritDice")]
 pub struct CritDice {
 	pub value: u8,
 	pub values: [u8; 6],
+	#[serde(skip)]
+	pub distribution: Uniform<usize>
 }
+
+#[derive(Eq, PartialEq, Serialize, Deserialize, Debug, Copy, Clone)]
+pub struct RawCritDice {
+	pub value: u8,
+	pub values: [u8; 6]
+}
+
+impl From<RawCritDice> for CritDice {
+	fn from(raw: RawCritDice) -> Self {
+		Self {
+			value: raw.value,
+			values: raw.values,
+			distribution: Uniform::<usize>::new_inclusive(0, raw.values.len() - 1).expect("Failed to create uniform distribution for crit dices"),
+		}
+	}
+}
+
 
 #[derive(PartialEq, Serialize, Deserialize, Debug, PartialOrd, Copy, Clone)]
 pub struct Level {
@@ -30,7 +50,7 @@ impl Display for Level {
 	}
 }
 
-#[derive(PartialEq, Serialize, Deserialize, Debug, PartialOrd, Clone)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Clone)]
 pub struct CritDices {
 	pub dices: Vec<CritDice>,
 	pub level: Vec<Level>,
@@ -58,22 +78,22 @@ impl Default for CritDices {
 				},
 			],
 			dices: vec![
-				CritDice {
+				RawCritDice {
 					value: 1,
 					values: [0, 0, 0, 0, 0, 1],
-				},
-				CritDice {
+				}.into(),
+				RawCritDice {
 					value: 2,
 					values: [0, 0, 0, 0, 1, 2],
-				},
-				CritDice {
+				}.into(),
+				RawCritDice {
 					value: 3,
 					values: [0, 0, 0, 0, 3, 2],
-				},
-				CritDice {
+				}.into(),
+				RawCritDice {
 					value: 4,
 					values: [0, 0, 1, 2, 3, 4],
-				},
+				}.into(),
 			],
 			s: 4,
 		}
@@ -81,15 +101,17 @@ impl Default for CritDices {
 }
 
 impl Level {
-	fn works(&self) -> bool {
-		let random_value: f32 = random!(..=100f32);
+	fn works(&self, rng: &mut impl Rng) -> bool {
+		let uniform = Uniform::new_inclusive(0f32, 100f32).expect("Failed to create uniform distribution for crits");
+		let random_value = rng.sample(uniform);
 		self.percentage > random_value
 	}
 }
 
 impl Rollable<u8> for CritDice {
-    fn roll(&self) -> &u8 {
-        &self.values[random_usize(0, self.values.len() - 1)]
+    fn roll(&self, rng: &mut impl Rng) -> u8 {
+		let random_value = rng.sample(&self.distribution);
+        self.values[random_value]
     }
 }
 
@@ -127,11 +149,11 @@ impl Loadable<CritDices> for CritDices {
 }
 
 impl CritDices {
-	pub fn roll(&self, value: i16) {
+	pub fn roll(&self, value: i16, rng: &mut impl Rng) {
 		let levels: Vec<(&Level, bool)> = self
 			.level
 			.iter()
-			.map(|x| (x, x.works()))
+			.map(|x| (x, x.works(rng)))
 			.filter(|x| x.1)
 			.collect();
 		let mut stack: Vec<&CritDice> = Vec::with_capacity(10);
@@ -145,7 +167,7 @@ impl CritDices {
 				}
 			}
 		}
-		let results: Vec<u8> = stack.iter_mut().map(|x| *x.roll()).collect();
+		let results: Vec<u8> = stack.iter_mut().map(|x| x.roll(rng)).collect();
 		// How many "S" where found in the "rolled" dices
 		let s_counter = results.iter().filter(|x| **x == self.s).count();
 		let counter: u8 = results.into_iter().filter(|x| *x != self.s).sum();

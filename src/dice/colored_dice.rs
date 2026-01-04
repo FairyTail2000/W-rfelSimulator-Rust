@@ -1,7 +1,8 @@
 use ansi_term::Colour;
 use crate::common::{settings_path, Loadable, Rollable};
 use crate::dbgprintln;
-use random_integer::random_usize;
+use rand::Rng;
+use rand::distr::Uniform;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -10,12 +11,37 @@ use std::path::Path;
 const COLORED_DICES_FILE: &str = "colored.yaml";
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(from = "RawColoredDice")]
 pub struct ColoredDice {
 	pub long: String,
 	pub short: char,
 	pub sites: [u8; 6],
 	pub value: u8,
 	pub color: String,
+	#[serde(skip)]
+	range: Uniform<usize>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RawColoredDice {
+	pub long: String,
+	pub short: char,
+	pub sites: [u8; 6],
+	pub value: u8,
+	pub color: String,
+}
+
+impl From<RawColoredDice> for ColoredDice {
+	fn from(raw: RawColoredDice) -> Self {
+		Self {
+			long: raw.long,
+			short: raw.short,
+			sites: raw.sites,
+			value: raw.value,
+			color: raw.color,
+			range: Uniform::<usize>::new_inclusive(0, raw.sites.len() - 1).expect("Failed to create uniform distribution for colored dice"),
+		}
+	}
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -25,38 +51,42 @@ pub struct ColoredDices {
 
 impl Default for ColoredDices {
 	fn default() -> Self {
-		return ColoredDices {
+		ColoredDices {
 			dices: vec![
 				ColoredDice {
-					long: "Rosa".parse().unwrap(),
-					short: "r".parse().unwrap(),
+					long: "Rosa".to_string(),
+					short: 'r',
 					sites: [0, 0, 0, 1, 1, 2],
 					value: 1,
-					color: "#FF8B8B".parse().unwrap(),
+					color: "#FF8B8B".to_string(),
+					range: Uniform::new_inclusive(0, 5).expect("Failed to create uniform distribution for colored dice")
 				},
 				ColoredDice {
-					long: "Grün".parse().unwrap(),
-					short: "g".parse().unwrap(),
+					long: "Grün".to_string(),
+					short: 'g',
 					sites: [0, 0, 1, 1, 2, 2],
 					value: 2,
-					color: "#22FF00".parse().unwrap(),
+					color: "#22FF00".to_string(),
+					range: Uniform::new_inclusive(0, 5).expect("Failed to create uniform distribution for colored dice")
 				},
 				ColoredDice {
-					long: "Weiß".parse().unwrap(),
-					short: "w".parse().unwrap(),
+					long: "Weiß".to_string(),
+					short: 'w',
 					sites: [0, 1, 2, 2, 2, 3],
 					value: 3,
-					color: "#FFFFFF".parse().unwrap(),
+					color: "#FFFFFF".to_string(),
+					range: Uniform::new_inclusive(0, 5).expect("Failed to create uniform distribution for colored dice")
 				},
 				ColoredDice {
-					long: "Schwarz".parse().unwrap(),
-					short: "s".parse().unwrap(),
+					long: "Schwarz".to_string(),
+					short: 's',
 					sites: [0, 1, 3, 3, 3, 4],
 					value: 4,
-					color: "#818181".parse().unwrap(),
+					color: "#818181".to_string(),
+					range: Uniform::new_inclusive(0, 5).expect("Failed to create uniform distribution for colored dice")
 				},
 			],
-		};
+		}
 	}
 }
 
@@ -96,9 +126,10 @@ impl Loadable<Self> for ColoredDices {
 }
 
 impl Rollable<u8> for ColoredDice {
-    fn roll(&self) -> &u8 {
-        self.sites
-            .get(random_usize(0, self.sites.len() - 1))
-            .unwrap()
+    fn roll(&self, rng: &mut impl Rng) -> u8 {
+        if self.sites.is_empty() {
+            return 0;
+        }
+        self.sites[rng.sample(&self.range)]
     }
 }
