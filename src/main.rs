@@ -18,7 +18,6 @@ use disadvantage::Disadvantage;
 use dice::normal_dice::Dices;
 use std::io;
 use std::io::Write;
-#[cfg(debug_assertions)]
 use std::time::SystemTime;
 use spell::Spells;
 use decay_series::Operation;
