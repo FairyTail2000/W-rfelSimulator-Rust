@@ -6,6 +6,8 @@ mod disadvantage;
 mod decay_series;
 mod common;
 
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::_rdseed64_step;
 use color::get_color;
 use crate::preferences::Settings;
 use clap::{Arg, Command};
@@ -22,9 +24,7 @@ use std::time::SystemTime;
 use spell::Spells;
 use decay_series::Operation;
 use decay_series::State;
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::_rdseed64_step;
-use rand::rngs::SmallRng;
+use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
 /**
@@ -319,7 +319,7 @@ fn main() -> io::Result<()> {
 			// C style initialization
 			seed_value = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos() as u64;
 		}
-		SmallRng::seed_from_u64(seed_value)
+		StdRng::seed_from_u64(seed_value)
 	};
 
 	let old = matches.get_flag("old_style") || preferences.old_style;
