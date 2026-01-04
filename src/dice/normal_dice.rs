@@ -22,6 +22,17 @@ pub struct Results {
 	count: u64,
 }
 
+fn calculate_variance(counts: &Vec<u64>, total_samples: u32, sides: u32) -> f64 {
+	let mean = total_samples as f64 / sides as f64;
+	let variance: f64 = counts.iter()
+		.map(|&count| {
+			let diff = count as f64 - mean;
+			diff * diff
+		})
+		.sum::<f64>() / sides as f64;
+	variance
+}
+
 impl Results {
 	pub fn print_results(&self, old_style: bool, no_summary: bool) {
 		println!("\n");
@@ -128,6 +139,20 @@ impl Results {
 				if self.sides == 1 { "hatte" } else { "hatten" }
 			);
 		}
+		if cfg!(debug_assertions) {
+			if let Some(counts) = &self.counts {
+				dbgprintln!("Varianz: {}", calculate_variance(counts, counts.iter().sum::<u64>() as u32, self.sides as u32));
+			} else if let Some(data) = &self.data {
+				let mut counts = vec![0u64; self.sides as usize];
+				for &value in data {
+					if value > 0 && value <= self.sides {
+						counts[(value - 1) as usize] += 1;
+					}
+				}
+				dbgprintln!("Varianz: {}", calculate_variance(&counts, data.len() as u32, self.sides as u32));
+			}
+		}
+
 	}
 }
 
