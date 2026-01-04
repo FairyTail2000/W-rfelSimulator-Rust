@@ -77,7 +77,7 @@ fn handle_input(
 		} else if let Ok(sides) = parsed {
 			if allowed_dice_sites.dices.contains(&sides) {
 				let amount = ask_for_amount(error_message, "Anzahl");
-				let res = dice::normal_dice::roll(amount, sides, rng);
+				let res = dice::normal_dice::roll(amount, sides, old_report_style, rng);
 				res.print_results(old_report_style, no_summary);
 			} else {
 				dbgprintln!("Die ist nicht erlaubt...")
