@@ -308,7 +308,7 @@ fn main() -> io::Result<()> {
 	}
 
 	let mut rng = {
-		let mut seed_value= 0;
+		let mut seed_value = 0;
 		#[cfg(target_arch = "x86_64")]
 		if is_x86_feature_detected!("rdseed") {
 			unsafe { _rdseed64_step(&mut seed_value); }
