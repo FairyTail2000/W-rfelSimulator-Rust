@@ -1,7 +1,7 @@
 use ansi_term::Colour;
 use crate::common::{settings_path, Loadable, Rollable};
 use crate::dbgprintln;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand::distr::Uniform;
 use serde::{Deserialize, Serialize};
 use std::fs::File;

@@ -1,6 +1,6 @@
 use crate::common::{settings_path, Loadable, Rollable};
 use crate::dbgprintln;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand::distr::Uniform;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};

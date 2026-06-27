@@ -5,7 +5,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 use std::vec::Vec;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand::distr::Uniform;
 use serde::{Deserialize, Serialize};
 use crate::dbgprintln;
@@ -168,12 +168,14 @@ pub fn roll(amount: usize, sides: u8, old_style: bool, rng: &mut impl Rng) -> Re
 	} else {
 		// Pre-allocate space for each side (1-indexed for convenience)
 		let mut counts = vec![0u64; (sides + 1) as usize];
-		let die_range = Uniform::new_inclusive(1, sides as usize).expect("Failed to create uniform distribution for dice rolls");
+		// Sample u8 rather than usize: rand backs u8 ranges with u32, so each draw
+		// consumes one RNG word and a u32 multiply instead of two words / a u64 multiply.
+		let die_range = Uniform::<u8>::new_inclusive(1, sides).expect("Failed to create uniform distribution for dice rolls");
 		for _ in 0..amount {
 			let result = rng.sample(die_range);
 			// We use unchecked access because the distribution guarantees 1..=sides
 			unsafe {
-				*counts.get_unchecked_mut(result) += 1;
+				*counts.get_unchecked_mut(result as usize) += 1;
 			}
 		}
 

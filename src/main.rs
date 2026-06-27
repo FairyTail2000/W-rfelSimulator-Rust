@@ -24,8 +24,8 @@ use std::time::SystemTime;
 use spell::Spells;
 use decay_series::Operation;
 use decay_series::State;
-use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::Rng;
+use collatz_weyl::CollatzWeyl64;
 
 /**
  * Prints basic information's about the usage of the program
@@ -319,7 +319,8 @@ fn main() -> io::Result<()> {
 			// C style initialization
 			seed_value = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos() as u64;
 		}
-		StdRng::seed_from_u64(seed_value)
+		// CollatzWeyl64 requires an odd seed (it asserts seed & 1 == 1).
+		CollatzWeyl64::new(seed_value | 1)
 	};
 
 	let old = matches.get_flag("old_style") || preferences.old_style;

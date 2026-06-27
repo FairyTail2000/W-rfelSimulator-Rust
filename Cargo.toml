@@ -9,17 +9,31 @@ license = "GPL3"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "4.5.21"
+clap = "4.6.1"
 dialoguer = "0.12.0"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_yaml = "0.9"
 ansi_term = "0.12.1"
-rand = "0.9.2"
+rand = "0.10.1"
 directories = "6.0.0"
+# rand-core feature gives CollatzWeyl64 a rand_core 0.10 TryRng impl that unifies with
+# this project's rand 0.10, so it can be used as an Rng directly.
+collatz-weyl = { git = "https://github.com/Lucy-dot-dot/collatz-weyl", rev = "14385b4c5045db00d55ef4cf5fbc859064be1739", features = ["rand-core"] }
 
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
+
+[dev-dependencies]
+criterion = "0.8.2"
+
+[lib]
+name = "wuerfeln"
+path = "src/lib.rs"
+
+[[bench]]
+name = "normal_dice_roll"
+harness = false
 
 [package.metadata.deb]
 copyright = "No Copyright"
