@@ -1,10 +1,10 @@
+use crate::common::{Loadable, settings_path};
+use crate::dbgprintln;
 use ansi_term::Colour;
-use crate::common::{settings_path, Loadable};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
-use crate::dbgprintln;
 
 const PREFERENCE_FILE: &str = "settings.yaml";
 

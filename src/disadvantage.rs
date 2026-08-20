@@ -1,11 +1,11 @@
-use crate::common::{settings_path, Loadable};
+use crate::common::{Loadable, settings_path};
+use rand::distr::Uniform;
+use rand::{Rng, RngExt};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
-use rand::distr::Uniform;
-use rand::{Rng, RngExt};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize, Default, Hash, Debug, Clone)]
 pub struct Disadvantage {
@@ -78,6 +78,7 @@ impl Display for Disadvantage {
 }
 
 pub fn get_random<T: Clone>(adv: &Vec<T>, rng: &mut impl Rng) -> T {
-	let uniform = Uniform::new_inclusive(0, adv.len() - 1).expect("Failed to create uniform distribution for advantages");
+	let uniform = Uniform::new_inclusive(0, adv.len() - 1)
+		.expect("Failed to create uniform distribution for advantages");
 	adv[rng.sample(uniform)].clone()
 }

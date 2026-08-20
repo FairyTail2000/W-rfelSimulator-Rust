@@ -1,7 +1,7 @@
-use crate::common::{settings_path, Loadable, Rollable};
+use crate::common::{Loadable, Rollable, settings_path};
 use crate::dbgprintln;
-use rand::{Rng, RngExt};
 use rand::distr::Uniform;
+use rand::{Rng, RngExt};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::fs::{File, OpenOptions};
@@ -14,13 +14,13 @@ pub struct CritDice {
 	pub value: u8,
 	pub values: [u8; 6],
 	#[serde(skip)]
-	pub distribution: Uniform<usize>
+	pub distribution: Uniform<usize>,
 }
 
 #[derive(Eq, PartialEq, Serialize, Deserialize, Debug, Copy, Clone)]
 pub struct RawCritDice {
 	pub value: u8,
-	pub values: [u8; 6]
+	pub values: [u8; 6],
 }
 
 impl From<RawCritDice> for CritDice {
@@ -28,11 +28,11 @@ impl From<RawCritDice> for CritDice {
 		Self {
 			value: raw.value,
 			values: raw.values,
-			distribution: Uniform::<usize>::new_inclusive(0, raw.values.len() - 1).expect("Failed to create uniform distribution for crit dices"),
+			distribution: Uniform::<usize>::new_inclusive(0, raw.values.len() - 1)
+				.expect("Failed to create uniform distribution for crit dices"),
 		}
 	}
 }
-
 
 #[derive(PartialEq, Serialize, Deserialize, Debug, PartialOrd, Copy, Clone)]
 pub struct Level {
@@ -43,7 +43,8 @@ pub struct Level {
 
 impl Display for Level {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		let up = self.upper
+		let up = self
+			.upper
 			.and_then(|val| Some(val.to_string()))
 			.unwrap_or_else(|| "Keine Begrenzung".to_string());
 		write!(f, "Level {} - {}", self.lower, up)
@@ -81,19 +82,23 @@ impl Default for CritDices {
 				RawCritDice {
 					value: 1,
 					values: [0, 0, 0, 0, 0, 1],
-				}.into(),
+				}
+				.into(),
 				RawCritDice {
 					value: 2,
 					values: [0, 0, 0, 0, 1, 2],
-				}.into(),
+				}
+				.into(),
 				RawCritDice {
 					value: 3,
 					values: [0, 0, 0, 0, 3, 2],
-				}.into(),
+				}
+				.into(),
 				RawCritDice {
 					value: 4,
 					values: [0, 0, 1, 2, 3, 4],
-				}.into(),
+				}
+				.into(),
 			],
 			s: 4,
 		}
@@ -102,17 +107,18 @@ impl Default for CritDices {
 
 impl Level {
 	fn works(&self, rng: &mut impl Rng) -> bool {
-		let uniform = Uniform::new_inclusive(0f32, 100f32).expect("Failed to create uniform distribution for crits");
+		let uniform = Uniform::new_inclusive(0f32, 100f32)
+			.expect("Failed to create uniform distribution for crits");
 		let random_value = rng.sample(uniform);
 		self.percentage > random_value
 	}
 }
 
 impl Rollable<u8> for CritDice {
-    fn roll(&self, rng: &mut impl Rng) -> u8 {
+	fn roll(&self, rng: &mut impl Rng) -> u8 {
 		let random_value = rng.sample(&self.distribution);
-        self.values[random_value]
-    }
+		self.values[random_value]
+	}
 }
 
 impl Loadable<CritDices> for CritDices {

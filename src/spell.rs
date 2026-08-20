@@ -1,10 +1,10 @@
-use crate::common::{settings_path, Loadable, Rollable};
+use crate::common::{Loadable, Rollable, settings_path};
+use rand::distr::Uniform;
+use rand::{Rng, RngExt};
 use serde::{Deserialize, Serialize};
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
-use rand::distr::Uniform;
-use rand::{Rng, RngExt};
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize, Hash, Debug)]
 pub struct Spells {
@@ -136,9 +136,10 @@ impl Loadable<Vec<Spells>> for Spells {
 	}
 }
 
-impl Rollable<String> for Spells  {
-    fn roll(&self, rng: &mut impl Rng) -> String {
-		let distribution = Uniform::new_inclusive(0, self.spells.len() - 1).expect("Failed to create distribution for Spells");
-        self.spells[rng.sample(distribution)].clone()
-    }
+impl Rollable<String> for Spells {
+	fn roll(&self, rng: &mut impl Rng) -> String {
+		let distribution = Uniform::new_inclusive(0, self.spells.len() - 1)
+			.expect("Failed to create distribution for Spells");
+		self.spells[rng.sample(distribution)].clone()
+	}
 }

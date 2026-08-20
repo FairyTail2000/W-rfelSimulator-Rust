@@ -1,4 +1,4 @@
 mod common;
 mod macros;
 
-pub use common::{settings_path, Loadable, Rollable};
+pub use common::{Loadable, Rollable, settings_path};

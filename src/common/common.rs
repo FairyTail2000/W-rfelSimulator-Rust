@@ -1,9 +1,9 @@
-use directories::ProjectDirs;
-use std::fs::create_dir_all;
-use std::path::{PathBuf, MAIN_SEPARATOR};
-use std::process::exit;
-use rand::Rng;
 use crate::dbgprintln;
+use directories::ProjectDirs;
+use rand::Rng;
+use std::fs::create_dir_all;
+use std::path::{MAIN_SEPARATOR, PathBuf};
+use std::process::exit;
 
 pub fn settings_path(file: &str) -> PathBuf {
 	let dir = match ProjectDirs::from("", "", "würfeln") {
@@ -27,7 +27,7 @@ pub fn settings_path(file: &str) -> PathBuf {
 		}
 	};
 
-    dbgprintln!("Loading from file: {}", dir.to_str().unwrap());
+	dbgprintln!("Loading from file: {}", dir.to_str().unwrap());
 
 	dir
 }
@@ -37,5 +37,5 @@ pub trait Loadable<T> {
 }
 
 pub trait Rollable<T> {
-    fn roll(&self, rng: &mut impl Rng) -> T;
+	fn roll(&self, rng: &mut impl Rng) -> T;
 }

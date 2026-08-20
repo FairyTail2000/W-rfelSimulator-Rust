@@ -1,43 +1,45 @@
-mod preferences;
 mod color;
-mod dice;
-mod spell;
-mod disadvantage;
-mod decay_series;
 mod common;
+mod decay_series;
+mod dice;
+mod disadvantage;
+mod preferences;
+mod spell;
 
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::_rdseed64_step;
-use color::get_color;
 use crate::preferences::Settings;
 use clap::{Arg, Command};
-use dice::colored_dice::{ColoredDice, ColoredDices};
+use collatz_weyl::CollatzWeyl64;
+use color::get_color;
 use common::{Loadable, Rollable};
-use dice::crit_dice::CritDices;
+use decay_series::Operation;
+use decay_series::State;
 use dialoguer::console::Term;
 use dialoguer::{Input, MultiSelect, Select};
-use disadvantage::Disadvantage;
+use dice::colored_dice::{ColoredDice, ColoredDices};
+use dice::crit_dice::CritDices;
 use dice::normal_dice::Dices;
+use disadvantage::Disadvantage;
+use rand::Rng;
+use spell::Spells;
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::_rdseed64_step;
 use std::io;
 use std::io::Write;
 use std::time::SystemTime;
-use spell::Spells;
-use decay_series::Operation;
-use decay_series::State;
-use rand::Rng;
-use collatz_weyl::CollatzWeyl64;
 
 /**
  * Prints basic information's about the usage of the program
  * Also used for help message
  */
 fn print_startup_information(allowed_coloured_dices: &ColoredDices, allowed_dice_sites: &Dices) {
-	let normal_dices = allowed_dice_sites.dices
+	let normal_dices = allowed_dice_sites
+		.dices
 		.iter()
 		.map(|site| format!("{}", site))
 		.collect::<Vec<_>>()
 		.join(", ");
-	let colored_dices: String = allowed_coloured_dices.dices
+	let colored_dices: String = allowed_coloured_dices
+		.dices
 		.iter()
 		.filter_map(|site| {
 			get_color(&site.color)
@@ -63,7 +65,7 @@ fn handle_input(
 	allowed_dice_sites: &Dices,
 	error_message: &str,
 	no_summary: bool,
-	rng: &mut impl Rng
+	rng: &mut impl Rng,
 ) -> bool {
 	if input == "exit" || input == "e" {
 		true
@@ -91,12 +93,11 @@ fn ask_for_amount(error_message: &str, prompt: &str) -> usize {
 	let input = Input::new()
 		.with_prompt(prompt)
 		.validate_with(|input: &String| -> Result<(), &str> {
-			input.parse::<u64>()
-				.map(|_| ())
-				.map_err(|_| error_message)
+			input.parse::<u64>().map(|_| ()).map_err(|_| error_message)
 		})
 		.interact_text();
-	input.unwrap_or_else(|_e| "0".to_string())
+	input
+		.unwrap_or_else(|_e| "0".to_string())
 		.parse()
 		.unwrap_or_else(|_e| 0)
 }
@@ -175,35 +176,44 @@ fn get_app() -> Command {
 		.version("1.0.0")
 		.author("Rafael Sundorf <developer.rafael.sundorf@gmail.com>")
 		.about("Hiermit kann man würfeln!")
-		.arg(Arg::new("old_style")
-			.short('o')
-			.long("old_style")
-			.help("Nutzt den alten style um das Ergebnis anzuzeigen")
-			.action(clap::ArgAction::SetTrue)
+		.arg(
+			Arg::new("old_style")
+				.short('o')
+				.long("old_style")
+				.help("Nutzt den alten style um das Ergebnis anzuzeigen")
+				.action(clap::ArgAction::SetTrue),
 		)
-		.arg(Arg::new("no tutorial")
-			.short('n')
-			.long("no-tutorial")
-			.help("Unterdrückt die Start Nachricht")
-			.action(clap::ArgAction::SetTrue)
+		.arg(
+			Arg::new("no tutorial")
+				.short('n')
+				.long("no-tutorial")
+				.help("Unterdrückt die Start Nachricht")
+				.action(clap::ArgAction::SetTrue),
 		)
-		.arg(Arg::new("no summary message")
-			.short('s')
-			.long("no-summary-message")
-			.help("Unterdrückt die kurze information nachdem das Würfelergebnis ausgegeben wurde")
-			.action(clap::ArgAction::SetTrue)
+		.arg(
+			Arg::new("no summary message")
+				.short('s')
+				.long("no-summary-message")
+				.help(
+					"Unterdrückt die kurze information nachdem das Würfelergebnis ausgegeben wurde",
+				)
+				.action(clap::ArgAction::SetTrue),
 		)
-		.arg(Arg::new("no select dice select")
-			.short('d')
-			.long("no-select-dice-select")
-			.help("Verwendet die standard Eingabe anstatt einer Auswahl")
-			.action(clap::ArgAction::SetTrue)
+		.arg(
+			Arg::new("no select dice select")
+				.short('d')
+				.long("no-select-dice-select")
+				.help("Verwendet die standard Eingabe anstatt einer Auswahl")
+				.action(clap::ArgAction::SetTrue),
 		)
-		.arg(Arg::new("number instead")
-			.short('i')
-			.long("number-instead")
-			.help("Verwendet eine Zahlen eingabe anstatt einer Auswahl und Anzahl von farbigen würfeln")
-			.action(clap::ArgAction::SetTrue)
+		.arg(
+			Arg::new("number instead")
+				.short('i')
+				.long("number-instead")
+				.help(
+					"Verwendet eine Zahlen eingabe anstatt einer Auswahl und Anzahl von farbigen würfeln",
+				)
+				.action(clap::ArgAction::SetTrue),
 		)
 }
 
@@ -212,7 +222,7 @@ fn roll_colored_dice(
 	error_message: &str,
 	number_instead: bool,
 	stderr: &Term,
-	rng: &mut impl Rng
+	rng: &mut impl Rng,
 ) -> io::Result<()> {
 	if number_instead {
 		//Input a number and auto compute values
@@ -232,9 +242,7 @@ fn roll_colored_dice(
 			remaining %= dice.value as usize;
 		}
 
-		let accumulated_result: u64 = dices.iter()
-			.map(|x| x.0)
-			.sum();
+		let accumulated_result: u64 = dices.iter().map(|x| x.0).sum();
 		for result in dices {
 			dbgprintln!("{}: {}", result.1, result.0);
 		}
@@ -262,13 +270,17 @@ fn roll_colored_dice(
 
 		let mut result: Vec<(&String, u64)> = Vec::with_capacity(selection.len());
 		let mut accumulated_amount: u64 = 0;
-		let selection = selection.into_iter()
+		let selection = selection
+			.into_iter()
 			.filter_map(|select| colored_dice.dices.get(select))
-			.map(|dice| (dice, ask_for_amount(error_message, &*format!("Anzahl {}", dice.long))));
+			.map(|dice| {
+				(
+					dice,
+					ask_for_amount(error_message, &*format!("Anzahl {}", dice.long)),
+				)
+			});
 		for (dice, amount) in selection {
-			let amount = (0..amount)
-				.map(|_| dice.roll(rng) as u64)
-				.sum();
+			let amount = (0..amount).map(|_| dice.roll(rng) as u64).sum();
 			accumulated_amount += amount;
 			result.push((&dice.long, amount))
 		}
@@ -303,31 +315,41 @@ fn main() -> io::Result<()> {
 
 	#[cfg(debug_assertions)]
 	match start.elapsed() {
-		Ok(elapsed) => dbgprintln!("Loading Configuration finished, took {} ms", elapsed.as_millis()),
-		Err(err) => edbgprintln!("{}", err)
+		Ok(elapsed) => dbgprintln!(
+			"Loading Configuration finished, took {} ms",
+			elapsed.as_millis()
+		),
+		Err(err) => edbgprintln!("{}", err),
 	}
 
 	let mut rng = {
 		let mut seed_value = 0;
 		#[cfg(target_arch = "x86_64")]
 		if is_x86_feature_detected!("rdseed") {
-			unsafe { _rdseed64_step(&mut seed_value); }
+			unsafe {
+				_rdseed64_step(&mut seed_value);
+			}
 		}
 
 		// rdseed failed (or this is not an x86-64 system, result is 0 also in bad systems that return success on failure (AMD)
 		if seed_value == 0 {
 			// C style initialization
-			seed_value = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos() as u64;
+			seed_value = SystemTime::now()
+				.duration_since(std::time::UNIX_EPOCH)
+				.unwrap()
+				.as_nanos() as u64;
 		}
 		// CollatzWeyl64 requires an odd seed (it asserts seed & 1 == 1).
 		CollatzWeyl64::new(seed_value | 1)
 	};
 
 	let old = matches.get_flag("old_style") || preferences.old_style;
-	let no_dice_select = matches.get_flag("no select dice select") || preferences.no_select_dice_select;
+	let no_dice_select =
+		matches.get_flag("no select dice select") || preferences.no_select_dice_select;
 	let number_instead = matches.get_flag("number instead") || preferences.number_instead;
 	let no_tutorial = matches.get_flag("no tutorial") || preferences.no_tutorial;
-	let no_summary_message = matches.get_flag("no summary message") || preferences.no_summary_message;
+	let no_summary_message =
+		matches.get_flag("no summary message") || preferences.no_summary_message;
 
 	#[cfg(debug_assertions)]
 	let error_message = format!(
@@ -347,7 +369,6 @@ fn main() -> io::Result<()> {
 		dbgprintln!("{:?}\n", operation);
 		dbgprintln!("{:?}\n", spells);
 		dbgprintln!("{:?}\n", disadvantages);
-
 	}
 
 	let mut finished = false;
@@ -371,13 +392,13 @@ fn main() -> io::Result<()> {
 
 	while !finished {
 		let selection = Select::new()
-				.items(&items)
-				.default(1)
-				.interact_opt()
-				.ok()
-				.flatten()
-				.and_then(|sel| items.get(sel))
-				.copied();
+			.items(&items)
+			.default(1)
+			.interact_opt()
+			.ok()
+			.flatten()
+			.and_then(|sel| items.get(sel))
+			.copied();
 
 		let answer = match selection {
 			Some(answer) => answer,
@@ -397,9 +418,9 @@ fn main() -> io::Result<()> {
 					&mut rng,
 				) {
 					edbgprintln!("{}", err);
-					continue
+					continue;
 				}
-			},
+			}
 			"Hilfe" => {
 				finished = handle_input(
 					"h",
@@ -410,7 +431,7 @@ fn main() -> io::Result<()> {
 					no_summary_message,
 					&mut rng,
 				);
-			},
+			}
 			"Crit" => {
 				let input = Input::new()
 					.with_prompt("Anzahl")
@@ -434,17 +455,20 @@ fn main() -> io::Result<()> {
 					Ok(count) => crits.roll(count, &mut rng),
 					Err(err) => eprintln!("{}", err),
 				}
-			},
+			}
 			"Verlassen" => {
 				finished = true;
-			},
+			}
 			"Zerfallsreihen" => {
 				decay_series(&stdout, &operation);
-			},
+			}
 			"Random Zauber" => {
 				let search_string = "Kampfzauber";
 				let items: Vec<&str> = spells.iter().map(|x| &*x.name).collect();
-				let default = items.iter().position(|x| *x == search_string).unwrap_or_else(|| 0);
+				let default = items
+					.iter()
+					.position(|x| *x == search_string)
+					.unwrap_or_else(|| 0);
 
 				let selection = Select::new()
 					.items(&items)
@@ -455,11 +479,11 @@ fn main() -> io::Result<()> {
 				if let Some(index) = selection {
 					dbgprintln!("{}", spells[index].roll(&mut rng))
 				}
-			},
+			}
 			"Random Nachteil" => {
 				let rando = disadvantage::get_random(&disadvantages, &mut rng);
 				dbgprintln!("{}", rando);
-			},
+			}
 			_ => {
 				dbgprint!("Seitenanzahl: ");
 				if let Err(err) = stdout.flush() {
@@ -484,7 +508,8 @@ fn main() -> io::Result<()> {
 						Err(error) => edbgprintln!("error: {}", error),
 					}
 				} else {
-					let dice_items: Vec<String> = normal_dices.dices.iter().map(|x| x.to_string()).collect();
+					let dice_items: Vec<String> =
+						normal_dices.dices.iter().map(|x| x.to_string()).collect();
 					let selection = Select::new()
 						.items(&dice_items)
 						.default(3)
