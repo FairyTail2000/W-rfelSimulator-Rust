@@ -229,6 +229,156 @@ macro_rules! dispatch_dice {
 	};
 }
 
+/// Hand-rolled AVX2 fast path for the histogram roll of dice with at most 8
+/// sides (entropy width B <= 3).
+///
+/// The RNG stays scalar (CollatzWeyl64 is a serial dependency chain), but
+/// extraction and counting move into registers:
+///
+/// * One YMM holds eight u32 halves of four u64 words; `_mm256_srl_epi32`
+///   peels one B-bit chunk off every lane, so 16 words fill four YMMs.
+/// * `vpackusdw` + `vpackuswb` condense two peeled layers into a 32-byte
+///   vector holding 32 chunks (one per byte).
+/// * The histogram never touches memory: for each face value,
+///   `vpcmpeqb` + `vpmovmskb` + `popcnt` counts the matching chunks.
+///   Rejected chunks (`>= sides`) simply match no compare — rejection stays
+///   branch-free exactly like in the scalar path.
+///
+/// Register counting is what pays off: with at most 8 faces the per-face
+/// compares are cheaper than the scalar table increments they replace, and
+/// they also eliminate the store-forwarding chains between increments hitting
+/// the same histogram slot.
+#[cfg(target_arch = "x86_64")]
+mod simd {
+	use super::*;
+	use core::arch::x86_64::*;
+
+	/// u64 words buffered per RNG fill (32 KiB, L1-resident).
+	const BUF_WORDS: usize = 4096;
+	/// u64 words consumed per SIMD iteration.
+	const ITER_WORDS: usize = 16;
+
+	/// Upper bound on dice produced by one SIMD iteration:
+	/// 16 words x 2 u32 halves x 32/B chunks each.
+	const fn chunks_per_iter<const B: u32>() -> usize {
+		ITER_WORDS * 2 * (32 / B as usize)
+	}
+
+	/// Consumes all `ITER_WORDS` words, counting accepted chunks of value
+	/// `0..sides` into `counts[1..=sides]`. Returns how many dice were produced;
+	/// the caller only invokes this while at least `chunks_per_iter::<B>()`
+	/// dice remain, so it can never overshoot the requested amount.
+	#[target_feature(enable = "avx2")]
+	unsafe fn histogram_words<const B: u32>(
+		words: &[u64; ITER_WORDS],
+		sides: u32,
+		counts: &mut [u64],
+	) -> usize {
+		unsafe {
+			let chunk_mask = _mm256_set1_epi32(((1u32 << B) - 1) as i32);
+			let face_vecs = [
+				_mm256_set1_epi8(0),
+				_mm256_set1_epi8(1),
+				_mm256_set1_epi8(2),
+				_mm256_set1_epi8(3),
+				_mm256_set1_epi8(4),
+				_mm256_set1_epi8(5),
+				_mm256_set1_epi8(6),
+				_mm256_set1_epi8(7),
+			];
+			let a = _mm256_loadu_si256(words[0..4].as_ptr().cast());
+			let b = _mm256_loadu_si256(words[4..8].as_ptr().cast());
+			let c = _mm256_loadu_si256(words[8..12].as_ptr().cast());
+			let d = _mm256_loadu_si256(words[12..16].as_ptr().cast());
+			let mut produced = 0usize;
+			// Face totals are folded into `counts` only once per call: updating
+			// the table inside the hot loop would serialize on store-forwarding
+			// chains per histogram slot.
+			let mut face_hits = [0u64; 8];
+			// Peel two B-bit layers per round so the byte packing has both
+			// operands; 32/B layers x 2 register pairs is always even.
+			let mut prev: Option<(__m256i, __m256i)> = None;
+			for step in 0..(32 / B) {
+				let count = _mm_cvtsi32_si128(step as i32 * B as i32);
+				for (x, y) in [(a, b), (c, d)] {
+					let v0 = _mm256_and_si256(_mm256_srl_epi32(x, count), chunk_mask);
+					let v1 = _mm256_and_si256(_mm256_srl_epi32(y, count), chunk_mask);
+					match prev.take() {
+						Some((w0, w1)) => {
+							let bytes = _mm256_packus_epi16(
+								_mm256_packus_epi32(w0, w1),
+								_mm256_packus_epi32(v0, v1),
+							);
+							for face in 0..sides {
+								let eq = _mm256_cmpeq_epi8(bytes, face_vecs[face as usize]);
+								face_hits[face as usize] +=
+									_mm256_movemask_epi8(eq).count_ones() as u64;
+							}
+						}
+						None => prev = Some((v0, v1)),
+					}
+				}
+			}
+			// 32/B layers x 2 register pairs is even, so no layer is left unpaired.
+			debug_assert!(prev.is_none());
+			for (face, &hits) in face_hits[..sides as usize].iter().enumerate() {
+				// face is a chunk value 0..sides, so face + 1 indexes
+				// 1..=sides of the (sides + 1)-long table.
+				*counts.get_unchecked_mut(face + 1) += hits;
+				produced += hits as usize;
+			}
+			produced
+		}
+	}
+
+	/// Produces exactly `amount` faces in `1..=sides` into the 1-indexed
+	/// `counts` table and returns the produced count. Large batches run through
+	/// the AVX2 kernel; the sub-iteration tail falls back to the scalar sampler.
+	pub(super) fn roll_small_sides<const B: u32>(
+		amount: usize,
+		sides: u8,
+		rng: &mut impl Rng,
+		counts: &mut [u64],
+	) -> usize {
+		debug_assert!(u32::from(sides) <= 1 << B);
+		debug_assert!((1..=8).contains(&sides));
+		let chunks_per_word = 2 * (32 / B as usize);
+		let mut produced = 0usize;
+		let mut buf = [0u64; BUF_WORDS];
+		while amount - produced >= chunks_per_iter::<B>() {
+			// Fill enough words for the remaining dice (plus slack for rejected
+			// chunks), capped at the buffer size.
+			let dice_left = amount - produced;
+			let words = (dice_left / chunks_per_word + 1).min(BUF_WORDS);
+			for word in &mut buf[..words] {
+				*word = rng.next_u64();
+			}
+			let mut offset = 0;
+			while amount - produced >= chunks_per_iter::<B>() && offset + ITER_WORDS <= words {
+				let window: &[u64; ITER_WORDS] =
+					buf[offset..offset + ITER_WORDS].try_into().unwrap();
+				produced += unsafe { histogram_words::<B>(window, u32::from(sides), counts) };
+				offset += ITER_WORDS;
+			}
+		}
+		// Scalar tail: too few dice left to fill another SIMD iteration.
+		// It may draw one extra word beyond what the last batch consumed;
+		// faces stay uniform either way.
+		let tail = amount - produced;
+		if tail > 0 {
+			let emit = |face: u8| {
+				unsafe {
+					*counts.get_unchecked_mut(face as usize) += 1;
+				}
+				face != 0
+			};
+			for_each_die::<B, _>(tail, sides, rng, emit);
+			produced += tail;
+		}
+		produced
+	}
+}
+
 pub fn roll(amount: usize, sides: u8, old_style: bool, rng: &mut impl Rng) -> Results {
 	if old_style {
 		// Constructed for input validation parity: rejects sides == 0 with the
@@ -267,18 +417,34 @@ pub fn roll(amount: usize, sides: u8, old_style: bool, rng: &mut impl Rng) -> Re
 		// Pre-allocate space for each side (1-indexed for convenience).
 		// `sides as usize + 1` cannot wrap, unlike `sides + 1` for sides = 255.
 		let mut counts = vec![0u64; sides as usize + 1];
-		// Branch-free sink: rejected chunks bump the unused scratch slot at
-		// index 0 instead of taking a mispredict-heavy branch; it is zeroed
-		// again once rolling is done.
-		let emit = |face: u8| {
-			// The sampler only produces faces in 0..=sides, so indexing a
-			// (sides + 1)-long table is always in bounds.
-			unsafe {
-				*counts.get_unchecked_mut(face as usize) += 1;
-			}
-			face != 0
-		};
-		dispatch_dice!(sides, amount, rng, emit);
+		// The AVX2 kernel only pays off for large batches of small dice where
+		// the register histogram beats scalar table increments; route to it
+		// when available and fall through to the scalar sampler otherwise.
+		let mut simd_done = false;
+		#[cfg(target_arch = "x86_64")]
+		if amount >= 1024 && matches!(sides, 1..=8) && std::arch::is_x86_feature_detected!("avx2") {
+			let produced = match sides {
+				1..=2 => simd::roll_small_sides::<1>(amount, sides, rng, &mut counts),
+				3..=4 => simd::roll_small_sides::<2>(amount, sides, rng, &mut counts),
+				_ => simd::roll_small_sides::<3>(amount, sides, rng, &mut counts),
+			};
+			debug_assert_eq!(produced, amount);
+			simd_done = true;
+		}
+		if !simd_done {
+			// Branch-free sink: rejected chunks bump the unused scratch slot at
+			// index 0 instead of taking a mispredict-heavy branch; it is zeroed
+			// again once rolling is done.
+			let emit = |face: u8| {
+				// The sampler only produces faces in 0..=sides, so indexing a
+				// (sides + 1)-long table is always in bounds.
+				unsafe {
+					*counts.get_unchecked_mut(face as usize) += 1;
+				}
+				face != 0
+			};
+			dispatch_dice!(sides, amount, rng, emit);
+		}
 		counts[0] = 0;
 		Results {
 			counts: Some(counts),
@@ -434,5 +600,57 @@ mod tests {
 	fn zero_sides_still_panics() {
 		let mut rng = make_rng();
 		roll(1, 0, false, &mut rng);
+	}
+
+	#[test]
+	fn same_seed_same_histogram() {
+		// Both calls take the same code path (AVX2 kernel or scalar sampler,
+		// depending on the host), so identical inputs must yield identical
+		// histograms. 4097 also exercises a buffer-refill boundary.
+		for sides in [1u8, 2, 3, 4, 6, 8] {
+			let first = roll(40_097, sides, false, &mut make_rng());
+			let second = roll(40_097, sides, false, &mut make_rng());
+			assert_eq!(first.counts, second.counts, "sides {sides}");
+		}
+	}
+
+	#[test]
+	fn scalar_path_uniform() {
+		// amount below the SIMD threshold pins the scalar sampler even on
+		// AVX2 hosts; the AVX2 path itself is covered by faces_are_uniform.
+		for sides in [2u8, 3, 6, 7, 8] {
+			let rolls: u64 = 1023;
+			let mut rng = make_rng();
+			let results = roll(rolls as usize, sides, false, &mut rng);
+			let counts = results
+				.counts
+				.expect("histogram path should produce counts");
+			assert_eq!(counts[1..].iter().sum::<u64>(), rolls);
+			let expected = rolls as f64 / f64::from(sides);
+			let sigma = (expected * (1.0 - 1.0 / f64::from(sides))).sqrt();
+			for &count in &counts[1..] {
+				assert!(
+					((count as f64 - expected).abs()) < 5.0 * sigma,
+					"sides {sides}: count {count} vs expected {expected:.1}"
+				);
+			}
+		}
+	}
+
+	#[test]
+	fn simd_threshold_amounts_are_exact() {
+		// Around the 1024-dispatch threshold every amount must produce exactly
+		// that many counted dice, whatever path it lands on.
+		for sides in [1u8, 2, 3, 4, 5, 6, 7, 8] {
+			for amount in [1023usize, 1024, 1025, 4095, 4096, 4097] {
+				let mut rng = make_rng();
+				let results = roll(amount, sides, false, &mut rng);
+				let counts = results
+					.counts
+					.expect("histogram path should produce counts");
+				assert_eq!(counts[1..].iter().sum::<u64>(), amount as u64);
+				assert_eq!(counts[0], 0, "scratch slot must stay zeroed");
+			}
+		}
 	}
 }
