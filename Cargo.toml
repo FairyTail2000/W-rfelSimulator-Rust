@@ -18,7 +18,7 @@ rand = "0.10.1"
 directories = "6.0.0"
 # rand-core feature gives CollatzWeyl64 a rand_core 0.10 TryRng impl that unifies with
 # this project's rand 0.10, so it can be used as an Rng directly.
-collatz-weyl = { git = "https://github.com/Lucy-dot-dot/collatz-weyl", rev = "14385b4c5045db00d55ef4cf5fbc859064be1739", features = ["rand-core"] }
+collatz-weyl = { git = "https://github.com/Lucy-dot-dot/collatz-weyl", rev = "29b64d2be0b05ccf128c64e3d626bcac120f1521", features = ["rand-core", "low-quality-rng"] }
 
 [build-dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -33,6 +33,10 @@ path = "src/lib.rs"
 
 [[bench]]
 name = "normal_dice_roll"
+harness = false
+
+[[bench]]
+name = "normal_dice_roll_avx2"
 harness = false
 
 [package.metadata.deb]

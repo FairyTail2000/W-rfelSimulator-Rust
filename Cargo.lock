@@ -193,7 +193,7 @@ checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 [[package]]
 name = "collatz-weyl"
 version = "0.1.0"
-source = "git+https://github.com/Lucy-dot-dot/collatz-weyl?rev=14385b4c5045db00d55ef4cf5fbc859064be1739#14385b4c5045db00d55ef4cf5fbc859064be1739"
+source = "git+https://github.com/Lucy-dot-dot/collatz-weyl?rev=29b64d2be0b05ccf128c64e3d626bcac120f1521#29b64d2be0b05ccf128c64e3d626bcac120f1521"
 dependencies = [
  "rand_core",
 ]
